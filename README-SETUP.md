@@ -56,7 +56,7 @@ make run
 After running `make docker-up`, the following services will be available:
 
 - **API Server**: http://localhost:8080
-- **PostgreSQL**: localhost:5432
+- **PostgreSQL**: localhost:5433
 - **Redis**: localhost:6379
 - **Adminer** (DB Admin): http://localhost:8081
 
