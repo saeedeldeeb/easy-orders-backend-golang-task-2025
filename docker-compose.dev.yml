@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  # Development version with hot reload
+  app-dev:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.dev
+    container_name: easy-orders-app-dev
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=easy_orders
+      - DB_SSLMODE=disable
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - JWT_SECRET=dev-secret-key
+      - SERVER_PORT=8080
+      - LOG_LEVEL=debug
+      - ENVIRONMENT=development
+    ports:
+      - '8080:8080'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - easy-orders-network
+    volumes:
+      - ./:/app
+    restart: unless-stopped
+
+  # Use the same postgres and redis from main docker-compose.yml
+  postgres:
+    extends:
+      file: docker-compose.yml
+      service: postgres
+
+  redis:
+    extends:
+      file: docker-compose.yml
+      service: redis
+
+  adminer:
+    extends:
+      file: docker-compose.yml
+      service: adminer
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  easy-orders-network:
+    driver: bridge
