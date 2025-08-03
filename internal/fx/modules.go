@@ -10,6 +10,7 @@ import (
 
 	"go.uber.org/fx"
 	"go.uber.org/zap"
+	"gorm.io/gorm"
 )
 
 // ConfigModule provides application configuration
@@ -47,6 +48,10 @@ var DatabaseModule = fx.Module("database",
 			return db, nil
 		},
 	),
+	// Provide the underlying *gorm.DB for migrator
+	fx.Provide(func(db *database.DB) *gorm.DB {
+		return db.DB
+	}),
 	fx.Provide(migrations.NewMigrator),
 	fx.Invoke(func(lc fx.Lifecycle, db *database.DB, migrator *migrations.Migrator, logger *logger.Logger) {
 		lc.Append(fx.Hook{

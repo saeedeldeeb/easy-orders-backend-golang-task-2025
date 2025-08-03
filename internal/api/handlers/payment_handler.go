@@ -228,9 +228,6 @@ func (h *PaymentHandler) RegisterRoutes(router *gin.RouterGroup) {
 		payments.POST("/:id/refund", h.RefundPayment)
 	}
 
-	// Order payment routes
-	orders := router.Group("/orders")
-	{
-		orders.GET("/:order_id/payments", h.GetOrderPayments)
-	}
+	// Order payment routes (moved to avoid conflict with /orders/:id)
+	router.GET("/payments/order/:order_id", h.GetOrderPayments)
 }

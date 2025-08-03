@@ -362,9 +362,6 @@ func (h *OrderHandler) RegisterRoutes(router *gin.RouterGroup) {
 		orders.PATCH("/:id/cancel", h.CancelOrder)
 	}
 
-	// User-specific order routes
-	users := router.Group("/users")
-	{
-		users.GET("/:user_id/orders", h.GetUserOrders)
-	}
+	// User-specific order routes (moved to avoid conflict with /users/:id)
+	router.GET("/orders/user/:user_id", h.GetUserOrders)
 }
