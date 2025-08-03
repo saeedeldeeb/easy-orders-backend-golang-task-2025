@@ -26,6 +26,7 @@ var ServerModule = fx.Module("server",
 func NewGinEngine(
 	cfg *config.Config,
 	logger *logger.Logger,
+	errorMiddleware *middleware.ErrorMiddleware,
 	authMiddleware *middleware.AuthMiddleware,
 	corsMiddleware *middleware.CORSMiddleware,
 	rateLimiter *middleware.RateLimiter,
@@ -46,9 +47,10 @@ func NewGinEngine(
 	engine := gin.New()
 
 	// Add core middleware in order
-	engine.Use(gin.Recovery())           // Panic recovery
-	engine.Use(corsMiddleware.Handler()) // CORS handling
-	engine.Use(rateLimiter.Limit())      // Rate limiting
+	engine.Use(gin.Recovery())            // Panic recovery
+	engine.Use(corsMiddleware.Handler())  // CORS handling
+	engine.Use(rateLimiter.Limit())       // Rate limiting
+	engine.Use(errorMiddleware.Handler()) // Centralized error handling
 
 	// Add basic request logging
 	engine.Use(func(c *gin.Context) {

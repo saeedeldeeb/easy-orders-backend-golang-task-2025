@@ -17,6 +17,9 @@ var MiddlewareModule = fx.Module("middleware",
 			return jwt.NewTokenManager(&cfg.JWT)
 		},
 
+		// Error Middleware
+		middleware.NewErrorMiddleware,
+
 		// Auth Middleware
 		middleware.NewAuthMiddleware,
 

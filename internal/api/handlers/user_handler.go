@@ -5,7 +5,9 @@ import (
 	"strconv"
 	"strings"
 
+	"easy-orders-backend/internal/middleware"
 	"easy-orders-backend/internal/services"
+	"easy-orders-backend/pkg/errors"
 	"easy-orders-backend/pkg/logger"
 
 	"github.com/gin-gonic/gin"
@@ -30,7 +32,8 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 	var req services.CreateUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		h.logger.Error("Failed to bind create user request", "error", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		appErr := errors.NewValidationErrorWithDetails("Invalid request body", err.Error())
+		middleware.AbortWithError(c, appErr)
 		return
 	}
 
@@ -40,20 +43,19 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 
 		// Handle specific error types
 		if strings.Contains(err.Error(), "already exists") {
-			c.JSON(http.StatusConflict, gin.H{
-				"error": "User with this email already exists",
-			})
+			appErr := errors.NewDuplicateError("User", "email", req.Email)
+			middleware.AbortWithError(c, appErr)
 			return
 		}
 
 		if strings.Contains(err.Error(), "required") || strings.Contains(err.Error(), "invalid") {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": err.Error(),
-			})
+			appErr := errors.NewValidationError(err.Error())
+			middleware.AbortWithError(c, appErr)
 			return
 		}
 
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
+		appErr := errors.NewInternalError("Failed to create user", err)
+		middleware.AbortWithError(c, appErr)
 		return
 	}
 
@@ -73,11 +75,13 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 		h.logger.Error("Failed to get user", "error", err, "id", id)
 
 		if strings.Contains(err.Error(), "not found") {
-			c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+			appErr := errors.NewNotFoundErrorWithID("User", id)
+			middleware.AbortWithError(c, appErr)
 			return
 		}
 
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user"})
+		appErr := errors.NewInternalError("Failed to get user", err)
+		middleware.AbortWithError(c, appErr)
 		return
 	}
 
