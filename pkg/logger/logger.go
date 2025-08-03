@@ -1,42 +1,64 @@
 package logger
 
 import (
-	"log/slog"
-	"os"
 	"strings"
+
+	"go.uber.org/zap"
 )
 
+// Logger wraps zap.Logger for application use
 type Logger struct {
-	*slog.Logger
+	*zap.SugaredLogger
 }
 
-func New(level string) *Logger {
-	var logLevel slog.Level
+// New creates a new logger with the specified level
+func New(level string) (*Logger, error) {
+	var zapLevel zap.AtomicLevel
 
 	switch strings.ToLower(level) {
 	case "debug":
-		logLevel = slog.LevelDebug
+		zapLevel = zap.NewAtomicLevelAt(zap.DebugLevel)
 	case "info":
-		logLevel = slog.LevelInfo
+		zapLevel = zap.NewAtomicLevelAt(zap.InfoLevel)
 	case "warn", "warning":
-		logLevel = slog.LevelWarn
+		zapLevel = zap.NewAtomicLevelAt(zap.WarnLevel)
 	case "error":
-		logLevel = slog.LevelError
+		zapLevel = zap.NewAtomicLevelAt(zap.ErrorLevel)
 	default:
-		logLevel = slog.LevelInfo
+		zapLevel = zap.NewAtomicLevelAt(zap.InfoLevel)
 	}
 
-	opts := &slog.HandlerOptions{
-		Level: logLevel,
+	config := zap.Config{
+		Level:       zapLevel,
+		Development: false,
+		Sampling: &zap.SamplingConfig{
+			Initial:    100,
+			Thereafter: 100,
+		},
+		Encoding:         "json",
+		EncoderConfig:    zap.NewProductionEncoderConfig(),
+		OutputPaths:      []string{"stderr"},
+		ErrorOutputPaths: []string{"stderr"},
 	}
 
-	handler := slog.NewJSONHandler(os.Stdout, opts)
-	logger := slog.New(handler)
+	logger, err := config.Build()
+	if err != nil {
+		return nil, err
+	}
 
-	return &Logger{Logger: logger}
+	return &Logger{SugaredLogger: logger.Sugar()}, nil
 }
 
-func (l *Logger) Fatal(msg string, args ...any) {
-	l.Error(msg, args...)
-	os.Exit(1)
+// NewDevelopment creates a development logger with pretty output
+func NewDevelopment() (*Logger, error) {
+	logger, err := zap.NewDevelopment()
+	if err != nil {
+		return nil, err
+	}
+	return &Logger{SugaredLogger: logger.Sugar()}, nil
+}
+
+// Fatal logs a message and exits
+func (l *Logger) Fatal(msg string, args ...interface{}) {
+	l.SugaredLogger.Fatalf(msg, args...)
 }

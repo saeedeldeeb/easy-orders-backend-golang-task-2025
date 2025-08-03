@@ -1,0 +1,110 @@
+package fx
+
+import (
+	"context"
+	"fmt"
+	"net/http"
+	"time"
+
+	"easy-orders-backend/internal/api/handlers"
+	"easy-orders-backend/internal/config"
+	"easy-orders-backend/pkg/logger"
+
+	"github.com/gin-gonic/gin"
+	"go.uber.org/fx"
+)
+
+// ServerModule provides HTTP server
+var ServerModule = fx.Module("server",
+	fx.Provide(NewGinEngine),
+	fx.Provide(NewHTTPServer),
+	fx.Invoke(RegisterServerLifecycle),
+)
+
+// NewGinEngine creates a new Gin engine
+func NewGinEngine(cfg *config.Config, logger *logger.Logger, userHandler *handlers.UserHandler) *gin.Engine {
+	// Set gin mode based on environment
+	if cfg.Server.Environment == "production" {
+		gin.SetMode(gin.ReleaseMode)
+	} else {
+		gin.SetMode(gin.DebugMode)
+	}
+
+	engine := gin.New()
+
+	// Add recovery middleware
+	engine.Use(gin.Recovery())
+
+	// Add basic request logging
+	engine.Use(func(c *gin.Context) {
+		start := time.Now()
+		c.Next()
+
+		logger.Info("HTTP Request",
+			"method", c.Request.Method,
+			"path", c.Request.URL.Path,
+			"status", c.Writer.Status(),
+			"duration", time.Since(start),
+			"client_ip", c.ClientIP(),
+		)
+	})
+
+	// Health check endpoint
+	engine.GET("/health", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"status":    "ok",
+			"timestamp": time.Now().UTC(),
+			"service":   "easy-orders-backend",
+		})
+	})
+
+	// API v1 group
+	v1 := engine.Group("/api/v1")
+	{
+		// Register user routes
+		userHandler.RegisterRoutes(v1)
+
+		// Health check under API version
+		v1.GET("/ping", func(c *gin.Context) {
+			c.JSON(http.StatusOK, gin.H{"message": "pong"})
+		})
+	}
+
+	return engine
+}
+
+// NewHTTPServer creates a new HTTP server
+func NewHTTPServer(cfg *config.Config, engine *gin.Engine) *http.Server {
+	return &http.Server{
+		Addr:         fmt.Sprintf(":%s", cfg.Server.Port),
+		Handler:      engine,
+		ReadTimeout:  cfg.Server.ReadTimeout,
+		WriteTimeout: cfg.Server.WriteTimeout,
+	}
+}
+
+// RegisterServerLifecycle registers server start/stop hooks
+func RegisterServerLifecycle(lc fx.Lifecycle, server *http.Server, logger *logger.Logger) {
+	lc.Append(fx.Hook{
+		OnStart: func(ctx context.Context) error {
+			logger.Info("Starting HTTP server", "addr", server.Addr)
+
+			go func() {
+				if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+					logger.Error("HTTP server failed to start", "error", err)
+				}
+			}()
+
+			return nil
+		},
+		OnStop: func(ctx context.Context) error {
+			logger.Info("Stopping HTTP server...")
+
+			// Create a context with timeout for graceful shutdown
+			shutdownCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+			defer cancel()
+
+			return server.Shutdown(shutdownCtx)
+		},
+	})
+}

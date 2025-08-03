@@ -16,6 +16,8 @@ help:
 	@echo "  dev           - Start development environment with hot reload"
 	@echo "  env-setup     - Set up environment configuration from template"
 	@echo "  env-check     - Validate docker-compose configuration"
+	@echo "  compile-check - Check Go compilation"
+	@echo "  validate      - Run full validation (env + compile)"
 	@echo "  migrate-up    - Run database migrations"
 	@echo "  migrate-down  - Rollback database migrations"
 	@echo "  seed          - Seed database with test data"
@@ -120,3 +122,15 @@ env-setup:
 env-check:
 	@echo "Validating docker-compose configuration..."
 	docker-compose config > /dev/null && echo "✅ Configuration is valid"
+
+# Check compilation without building
+compile-check:
+	@echo "Checking Go compilation..."
+	go build -o /dev/null cmd/server/main.go && echo "✅ Code compiles successfully"
+
+# Validate entire setup
+validate:
+	@echo "Running full validation..."
+	@make env-check
+	@make compile-check
+	@echo "✅ All validations passed"

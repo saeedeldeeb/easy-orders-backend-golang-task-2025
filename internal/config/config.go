@@ -18,6 +18,8 @@ type ServerConfig struct {
 	Port         string
 	ReadTimeout  time.Duration
 	WriteTimeout time.Duration
+	LogLevel     string
+	Environment  string
 }
 
 type DatabaseConfig struct {
@@ -49,6 +51,8 @@ func Load() (*Config, error) {
 			Port:         getEnv("SERVER_PORT", "8080"),
 			ReadTimeout:  getDurationEnv("SERVER_READ_TIMEOUT", 10*time.Second),
 			WriteTimeout: getDurationEnv("SERVER_WRITE_TIMEOUT", 10*time.Second),
+			LogLevel:     getEnv("LOG_LEVEL", "info"),
+			Environment:  getEnv("ENVIRONMENT", "development"),
 		},
 		Database: DatabaseConfig{
 			Host:     getEnv("DB_HOST", "localhost"),
