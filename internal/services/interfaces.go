@@ -72,6 +72,12 @@ type ReportService interface {
 	GenerateUserActivityReport(ctx context.Context, req UserActivityReportRequest) (*UserActivityReportResponse, error)
 }
 
+// OrderPipelineService defines concurrent order processing pipeline logic
+type OrderPipelineService interface {
+	ProcessOrder(ctx context.Context, req CreateOrderRequest) (*OrderPipelineResult, error)
+	ProcessOrderAsync(ctx context.Context, req CreateOrderRequest) (<-chan *OrderPipelineResult, error)
+}
+
 // Request/Response structs
 type CreateUserRequest struct {
 	Email    string `json:"email" validate:"required,email"`
@@ -316,3 +322,25 @@ type TopProductItem struct {
 	TotalRevenue  float64 `json:"total_revenue"`
 	OrderCount    int     `json:"order_count"`
 }
+
+// OrderPipelineResult represents the result of the order processing pipeline
+type OrderPipelineResult struct {
+	Order          *OrderResponse   `json:"order"`
+	PaymentResult  *PaymentResponse `json:"payment,omitempty"`
+	InventoryItems []InventoryItem  `json:"inventory_items,omitempty"`
+	Notifications  []string         `json:"notifications,omitempty"`
+	ProcessingTime time.Duration    `json:"processing_time"`
+	Errors         []string         `json:"errors,omitempty"`
+	Status         PipelineStatus   `json:"status"`
+}
+
+// PipelineStatus represents the status of pipeline execution
+type PipelineStatus string
+
+const (
+	PipelineStatusPending    PipelineStatus = "pending"
+	PipelineStatusProcessing PipelineStatus = "processing"
+	PipelineStatusCompleted  PipelineStatus = "completed"
+	PipelineStatusFailed     PipelineStatus = "failed"
+	PipelineStatusPartial    PipelineStatus = "partial"
+)

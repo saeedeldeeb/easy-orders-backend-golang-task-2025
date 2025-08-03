@@ -50,5 +50,11 @@ var ServicesModule = fx.Module("services",
 			services.NewReportService,
 			fx.As(new(services.ReportService)),
 		),
+
+		// Order Pipeline service
+		fx.Annotate(
+			services.NewOrderPipelineService,
+			fx.As(new(services.OrderPipelineService)),
+		),
 	),
 )

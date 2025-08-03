@@ -15,5 +15,6 @@ var HandlersModule = fx.Module("handlers",
 		handlers.NewPaymentHandler,
 		handlers.NewInventoryHandler,
 		handlers.NewAdminHandler,
+		handlers.NewOrderPipelineHandler,
 	),
 )
