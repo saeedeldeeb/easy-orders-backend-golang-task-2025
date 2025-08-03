@@ -209,10 +209,10 @@ func (s *userService) AuthenticateUser(ctx context.Context, email, password stri
 		return nil, errors.New("invalid credentials")
 	}
 
-	// TODO: Generate proper JWT token
-	// For now, just return a placeholder response
+	// TODO: This will be updated to use actual JWT token manager once middleware is integrated
+	// For now, return a predictable token format for testing
 	return &AuthResponse{
-		Token: "placeholder-jwt-token-" + user.ID,
+		Token: "jwt-token-" + user.ID,
 		User: UserResponse{
 			ID:       user.ID,
 			Email:    user.Email,

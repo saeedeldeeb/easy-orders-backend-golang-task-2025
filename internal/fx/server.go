@@ -8,6 +8,7 @@ import (
 
 	"easy-orders-backend/internal/api/handlers"
 	"easy-orders-backend/internal/config"
+	"easy-orders-backend/internal/middleware"
 	"easy-orders-backend/pkg/logger"
 
 	"github.com/gin-gonic/gin"
@@ -25,6 +26,9 @@ var ServerModule = fx.Module("server",
 func NewGinEngine(
 	cfg *config.Config,
 	logger *logger.Logger,
+	authMiddleware *middleware.AuthMiddleware,
+	corsMiddleware *middleware.CORSMiddleware,
+	rateLimiter *middleware.RateLimiter,
 	userHandler *handlers.UserHandler,
 	productHandler *handlers.ProductHandler,
 	orderHandler *handlers.OrderHandler,
@@ -41,8 +45,10 @@ func NewGinEngine(
 
 	engine := gin.New()
 
-	// Add recovery middleware
-	engine.Use(gin.Recovery())
+	// Add core middleware in order
+	engine.Use(gin.Recovery())           // Panic recovery
+	engine.Use(corsMiddleware.Handler()) // CORS handling
+	engine.Use(rateLimiter.Limit())      // Rate limiting
 
 	// Add basic request logging
 	engine.Use(func(c *gin.Context) {
@@ -70,13 +76,26 @@ func NewGinEngine(
 	// API v1 group
 	v1 := engine.Group("/api/v1")
 	{
-		// Register all handler routes
-		userHandler.RegisterRoutes(v1)
-		productHandler.RegisterRoutes(v1)
-		orderHandler.RegisterRoutes(v1)
-		paymentHandler.RegisterRoutes(v1)
-		inventoryHandler.RegisterRoutes(v1)
-		adminHandler.RegisterRoutes(v1)
+		// Public routes (no authentication required)
+		userHandler.RegisterRoutes(v1) // Includes auth endpoint
+
+		// Protected routes (require authentication)
+		protected := v1.Group("")
+		protected.Use(authMiddleware.RequireAuth())
+		{
+			productHandler.RegisterRoutes(protected)
+			orderHandler.RegisterRoutes(protected)
+			paymentHandler.RegisterRoutes(protected)
+			inventoryHandler.RegisterRoutes(protected)
+		}
+
+		// Admin routes (require admin role)
+		admin := v1.Group("")
+		admin.Use(authMiddleware.RequireAuth())
+		admin.Use(authMiddleware.RequireAdmin())
+		{
+			adminHandler.RegisterRoutes(admin)
+		}
 
 		// Health check under API version
 		v1.GET("/ping", func(c *gin.Context) {
