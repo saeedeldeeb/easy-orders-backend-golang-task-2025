@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"time"
 
 	"easy-orders-backend/internal/models"
 )
@@ -89,14 +90,18 @@ type ListUsersRequest struct {
 }
 
 type UserResponse struct {
-	ID    string `json:"id"`
-	Email string `json:"email"`
-	Name  string `json:"name"`
+	ID       string `json:"id"`
+	Email    string `json:"email"`
+	Name     string `json:"name"`
+	Role     string `json:"role"`
+	IsActive bool   `json:"is_active"`
 }
 
 type ListUsersResponse struct {
-	Users []UserResponse `json:"users"`
-	Total int            `json:"total"`
+	Users  []*UserResponse `json:"users"`
+	Offset int             `json:"offset"`
+	Limit  int             `json:"limit"`
+	Total  int             `json:"total"`
 }
 
 type AuthResponse struct {
@@ -105,23 +110,29 @@ type AuthResponse struct {
 }
 
 type CreateProductRequest struct {
-	Name        string  `json:"name" validate:"required"`
-	Description string  `json:"description"`
-	Price       float64 `json:"price" validate:"required,gt=0"`
-	CategoryID  string  `json:"category_id"`
+	Name         string  `json:"name" validate:"required"`
+	Description  string  `json:"description"`
+	Price        float64 `json:"price" validate:"required,gt=0"`
+	SKU          string  `json:"sku" validate:"required"`
+	CategoryID   string  `json:"category_id"`
+	InitialStock int     `json:"initial_stock,omitempty"`
+	MinStock     int     `json:"min_stock,omitempty"`
+	MaxStock     int     `json:"max_stock,omitempty"`
 }
 
 type UpdateProductRequest struct {
-	Name        *string  `json:"name,omitempty"`
-	Description *string  `json:"description,omitempty"`
-	Price       *float64 `json:"price,omitempty" validate:"omitempty,gt=0"`
-	CategoryID  *string  `json:"category_id,omitempty"`
+	Name        string  `json:"name,omitempty"`
+	Description string  `json:"description,omitempty"`
+	Price       float64 `json:"price,omitempty" validate:"omitempty,gt=0"`
+	CategoryID  string  `json:"category_id,omitempty"`
+	IsActive    *bool   `json:"is_active,omitempty"`
 }
 
 type ListProductsRequest struct {
 	Offset     int    `json:"offset"`
 	Limit      int    `json:"limit"`
 	CategoryID string `json:"category_id,omitempty"`
+	ActiveOnly bool   `json:"active_only,omitempty"`
 }
 
 type SearchProductsRequest struct {
@@ -135,22 +146,29 @@ type ProductResponse struct {
 	Name        string  `json:"name"`
 	Description string  `json:"description"`
 	Price       float64 `json:"price"`
+	SKU         string  `json:"sku"`
 	CategoryID  string  `json:"category_id"`
+	IsActive    bool    `json:"is_active"`
+	Stock       int     `json:"stock"`
 }
 
 type ListProductsResponse struct {
-	Products []ProductResponse `json:"products"`
-	Total    int               `json:"total"`
+	Products []*ProductResponse `json:"products"`
+	Offset   int                `json:"offset"`
+	Limit    int                `json:"limit"`
+	Total    int                `json:"total"`
 }
 
 type CreateOrderRequest struct {
 	UserID string      `json:"user_id" validate:"required"`
 	Items  []OrderItem `json:"items" validate:"required,dive"`
+	Notes  string      `json:"notes,omitempty"`
 }
 
 type OrderItem struct {
-	ProductID string `json:"product_id" validate:"required"`
-	Quantity  int    `json:"quantity" validate:"required,gt=0"`
+	ProductID string  `json:"product_id" validate:"required"`
+	Quantity  int     `json:"quantity" validate:"required,gt=0"`
+	UnitPrice float64 `json:"unit_price"`
 }
 
 type ListOrdersRequest struct {
@@ -168,8 +186,10 @@ type OrderResponse struct {
 }
 
 type ListOrdersResponse struct {
-	Orders []OrderResponse `json:"orders"`
-	Total  int             `json:"total"`
+	Orders []*OrderResponse `json:"orders"`
+	Offset int              `json:"offset"`
+	Limit  int              `json:"limit"`
+	Total  int              `json:"total"`
 }
 
 type InventoryItem struct {
@@ -178,9 +198,10 @@ type InventoryItem struct {
 }
 
 type ProcessPaymentRequest struct {
-	OrderID     string  `json:"order_id" validate:"required"`
-	Amount      float64 `json:"amount" validate:"required,gt=0"`
-	PaymentType string  `json:"payment_type" validate:"required"`
+	OrderID           string  `json:"order_id" validate:"required"`
+	Amount            float64 `json:"amount" validate:"required,gt=0"`
+	PaymentType       string  `json:"payment_type" validate:"required"`
+	ExternalReference string  `json:"external_reference,omitempty"`
 }
 
 type PaymentResponse struct {
@@ -191,47 +212,72 @@ type PaymentResponse struct {
 }
 
 type SendNotificationRequest struct {
-	UserID string `json:"user_id" validate:"required"`
-	Title  string `json:"title" validate:"required"`
-	Body   string `json:"body" validate:"required"`
+	UserID  string `json:"user_id" validate:"required"`
+	Type    string `json:"type,omitempty"`
+	Channel string `json:"channel,omitempty"`
+	Title   string `json:"title" validate:"required"`
+	Body    string `json:"body" validate:"required"`
+	Data    string `json:"data,omitempty"`
 }
 
 type ListNotificationsRequest struct {
-	Offset int `json:"offset"`
-	Limit  int `json:"limit"`
+	Offset     int  `json:"offset"`
+	Limit      int  `json:"limit"`
+	UnreadOnly bool `json:"unread_only"`
 }
 
 type ListNotificationsResponse struct {
-	Notifications []NotificationResponse `json:"notifications"`
-	Total         int                    `json:"total"`
+	Notifications []*NotificationResponse `json:"notifications"`
+	Offset        int                     `json:"offset"`
+	Limit         int                     `json:"limit"`
+	Total         int                     `json:"total"`
 }
 
 type NotificationResponse struct {
-	ID    string `json:"id"`
-	Title string `json:"title"`
-	Body  string `json:"body"`
-	Read  bool   `json:"read"`
+	ID      string     `json:"id"`
+	UserID  string     `json:"user_id"`
+	Type    string     `json:"type"`
+	Channel string     `json:"channel"`
+	Title   string     `json:"title"`
+	Body    string     `json:"body"`
+	Data    string     `json:"data,omitempty"`
+	Read    bool       `json:"read"`
+	SentAt  *time.Time `json:"sent_at,omitempty"`
+	ReadAt  *time.Time `json:"read_at,omitempty"`
 }
 
 type LowStockResponse struct {
-	Items []LowStockItem `json:"items"`
+	Threshold int            `json:"threshold"`
+	Items     []LowStockItem `json:"items"`
+	Count     int            `json:"count"`
 }
 
 type LowStockItem struct {
-	ProductID string `json:"product_id"`
-	Current   int    `json:"current"`
-	Threshold int    `json:"threshold"`
+	ProductID    string `json:"product_id"`
+	ProductName  string `json:"product_name"`
+	ProductSKU   string `json:"product_sku"`
+	CurrentStock int    `json:"current_stock"`
+	MinStock     int    `json:"min_stock"`
 }
 
 type SalesReportResponse struct {
-	Date         string  `json:"date"`
-	TotalOrders  int     `json:"total_orders"`
-	TotalRevenue float64 `json:"total_revenue"`
+	Date              string         `json:"date"`
+	TotalSales        float64        `json:"total_sales"`
+	TotalOrders       int            `json:"total_orders"`
+	CompletedOrders   int            `json:"completed_orders"`
+	CancelledOrders   int            `json:"cancelled_orders"`
+	AverageOrderValue float64        `json:"average_order_value"`
+	OrdersByStatus    map[string]int `json:"orders_by_status"`
 }
 
 type InventoryReportResponse struct {
-	TotalProducts int `json:"total_products"`
-	TotalStock    int `json:"total_stock"`
+	TotalProducts      int                    `json:"total_products"`
+	ActiveProducts     int                    `json:"active_products"`
+	LowStockProducts   int                    `json:"low_stock_products"`
+	OutOfStockProducts int                    `json:"out_of_stock_products"`
+	TotalStockValue    float64                `json:"total_stock_value"`
+	TotalStockQuantity int                    `json:"total_stock_quantity"`
+	ProductInventory   []ProductInventoryItem `json:"product_inventory"`
 }
 
 type UserActivityReportRequest struct {
@@ -242,4 +288,31 @@ type UserActivityReportRequest struct {
 type UserActivityReportResponse struct {
 	ActiveUsers int `json:"active_users"`
 	NewUsers    int `json:"new_users"`
+}
+
+// ProductInventoryItem represents inventory information for a product
+type ProductInventoryItem struct {
+	ProductID     string  `json:"product_id"`
+	ProductName   string  `json:"product_name"`
+	SKU           string  `json:"sku"`
+	Price         float64 `json:"price"`
+	StockQuantity int     `json:"stock_quantity"`
+	StockValue    float64 `json:"stock_value"`
+	Status        string  `json:"status"`
+}
+
+// TopProductsResponse represents the response for top products report
+type TopProductsResponse struct {
+	TopProducts []*TopProductItem `json:"top_products"`
+	Limit       int               `json:"limit"`
+	Period      string            `json:"period"`
+}
+
+// TopProductItem represents a single product in the top products report
+type TopProductItem struct {
+	ProductID     string  `json:"product_id"`
+	ProductName   string  `json:"product_name"`
+	TotalQuantity int     `json:"total_quantity"`
+	TotalRevenue  float64 `json:"total_revenue"`
+	OrderCount    int     `json:"order_count"`
 }

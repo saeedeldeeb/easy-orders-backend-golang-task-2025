@@ -15,30 +15,40 @@ var ServicesModule = fx.Module("services",
 			fx.As(new(services.UserService)),
 		),
 
-		// TODO: Add other services as they are implemented
-		// fx.Annotate(
-		//     services.NewProductService,
-		//     fx.As(new(services.ProductService)),
-		// ),
-		// fx.Annotate(
-		//     services.NewOrderService,
-		//     fx.As(new(services.OrderService)),
-		// ),
-		// fx.Annotate(
-		//     services.NewInventoryService,
-		//     fx.As(new(services.InventoryService)),
-		// ),
-		// fx.Annotate(
-		//     services.NewPaymentService,
-		//     fx.As(new(services.PaymentService)),
-		// ),
-		// fx.Annotate(
-		//     services.NewNotificationService,
-		//     fx.As(new(services.NotificationService)),
-		// ),
-		// fx.Annotate(
-		//     services.NewReportService,
-		//     fx.As(new(services.ReportService)),
-		// ),
+		// Product service
+		fx.Annotate(
+			services.NewProductService,
+			fx.As(new(services.ProductService)),
+		),
+
+		// Inventory service
+		fx.Annotate(
+			services.NewInventoryService,
+			fx.As(new(services.InventoryService)),
+		),
+
+		// Order service
+		fx.Annotate(
+			services.NewOrderService,
+			fx.As(new(services.OrderService)),
+		),
+
+		// Payment service
+		fx.Annotate(
+			services.NewPaymentService,
+			fx.As(new(services.PaymentService)),
+		),
+
+		// Notification service
+		fx.Annotate(
+			services.NewNotificationService,
+			fx.As(new(services.NotificationService)),
+		),
+
+		// Report service
+		fx.Annotate(
+			services.NewReportService,
+			fx.As(new(services.ReportService)),
+		),
 	),
 )
