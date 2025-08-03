@@ -22,7 +22,16 @@ var ServerModule = fx.Module("server",
 )
 
 // NewGinEngine creates a new Gin engine
-func NewGinEngine(cfg *config.Config, logger *logger.Logger, userHandler *handlers.UserHandler) *gin.Engine {
+func NewGinEngine(
+	cfg *config.Config,
+	logger *logger.Logger,
+	userHandler *handlers.UserHandler,
+	productHandler *handlers.ProductHandler,
+	orderHandler *handlers.OrderHandler,
+	paymentHandler *handlers.PaymentHandler,
+	inventoryHandler *handlers.InventoryHandler,
+	adminHandler *handlers.AdminHandler,
+) *gin.Engine {
 	// Set gin mode based on environment
 	if cfg.Server.Environment == "production" {
 		gin.SetMode(gin.ReleaseMode)
@@ -61,8 +70,13 @@ func NewGinEngine(cfg *config.Config, logger *logger.Logger, userHandler *handle
 	// API v1 group
 	v1 := engine.Group("/api/v1")
 	{
-		// Register user routes
+		// Register all handler routes
 		userHandler.RegisterRoutes(v1)
+		productHandler.RegisterRoutes(v1)
+		orderHandler.RegisterRoutes(v1)
+		paymentHandler.RegisterRoutes(v1)
+		inventoryHandler.RegisterRoutes(v1)
+		adminHandler.RegisterRoutes(v1)
 
 		// Health check under API version
 		v1.GET("/ping", func(c *gin.Context) {

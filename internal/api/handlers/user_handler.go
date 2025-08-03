@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"net/http"
+	"strconv"
+	"strings"
 
 	"easy-orders-backend/internal/services"
 	"easy-orders-backend/pkg/logger"
@@ -34,7 +36,23 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 
 	user, err := h.userService.CreateUser(c.Request.Context(), req)
 	if err != nil {
-		h.logger.Error("Failed to create user", "error", err)
+		h.logger.Error("Failed to create user", "error", err, "email", req.Email)
+
+		// Handle specific error types
+		if strings.Contains(err.Error(), "already exists") {
+			c.JSON(http.StatusConflict, gin.H{
+				"error": "User with this email already exists",
+			})
+			return
+		}
+
+		if strings.Contains(err.Error(), "required") || strings.Contains(err.Error(), "invalid") {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": err.Error(),
+			})
+			return
+		}
+
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
 		return
 	}
@@ -53,7 +71,13 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 	user, err := h.userService.GetUser(c.Request.Context(), id)
 	if err != nil {
 		h.logger.Error("Failed to get user", "error", err, "id", id)
-		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+
+		if strings.Contains(err.Error(), "not found") {
+			c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+			return
+		}
+
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user"})
 		return
 	}
 
@@ -105,10 +129,21 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 
 // ListUsers handles GET /api/v1/users
 func (h *UserHandler) ListUsers(c *gin.Context) {
-	// TODO: Parse query parameters for pagination
-	req := services.ListUsersRequest{
-		Offset: 0,
-		Limit:  10,
+	// Parse query parameters for pagination
+	var req services.ListUsersRequest
+
+	// Parse offset
+	if offsetStr := c.Query("offset"); offsetStr != "" {
+		if offset, err := strconv.Atoi(offsetStr); err == nil {
+			req.Offset = offset
+		}
+	}
+
+	// Parse limit
+	if limitStr := c.Query("limit"); limitStr != "" {
+		if limit, err := strconv.Atoi(limitStr); err == nil {
+			req.Limit = limit
+		}
 	}
 
 	users, err := h.userService.ListUsers(c.Request.Context(), req)

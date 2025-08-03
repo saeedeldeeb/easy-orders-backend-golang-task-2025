@@ -1,0 +1,236 @@
+package handlers
+
+import (
+	"net/http"
+	"strings"
+
+	"easy-orders-backend/internal/services"
+	"easy-orders-backend/pkg/logger"
+
+	"github.com/gin-gonic/gin"
+)
+
+// PaymentHandler handles payment-related HTTP requests
+type PaymentHandler struct {
+	paymentService services.PaymentService
+	logger         *logger.Logger
+}
+
+// NewPaymentHandler creates a new payment handler
+func NewPaymentHandler(paymentService services.PaymentService, logger *logger.Logger) *PaymentHandler {
+	return &PaymentHandler{
+		paymentService: paymentService,
+		logger:         logger,
+	}
+}
+
+// ProcessPayment handles POST /api/v1/payments
+func (h *PaymentHandler) ProcessPayment(c *gin.Context) {
+	h.logger.Debug("Processing payment via API")
+
+	var req services.ProcessPaymentRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		h.logger.Error("Failed to bind payment request", "error", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "Invalid request format",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	// Call service
+	payment, err := h.paymentService.ProcessPayment(c.Request.Context(), req)
+	if err != nil {
+		h.logger.Error("Failed to process payment", "error", err, "order_id", req.OrderID)
+
+		// Handle specific error types
+		if strings.Contains(err.Error(), "not found") {
+			c.JSON(http.StatusNotFound, gin.H{
+				"error": "Order not found",
+			})
+			return
+		}
+
+		if strings.Contains(err.Error(), "already been paid") {
+			c.JSON(http.StatusConflict, gin.H{
+				"error": "Order has already been paid",
+			})
+			return
+		}
+
+		if strings.Contains(err.Error(), "does not match") || strings.Contains(err.Error(), "cannot be paid") {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": err.Error(),
+			})
+			return
+		}
+
+		if strings.Contains(err.Error(), "processing failed") {
+			c.JSON(http.StatusPaymentRequired, gin.H{
+				"error": "Payment processing failed",
+			})
+			return
+		}
+
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to process payment",
+		})
+		return
+	}
+
+	h.logger.Info("Payment processed successfully via API", "id", payment.ID, "order_id", req.OrderID, "amount", req.Amount)
+	c.JSON(http.StatusCreated, gin.H{
+		"message": "Payment processed successfully",
+		"data":    payment,
+	})
+}
+
+// GetPayment handles GET /api/v1/payments/:id
+func (h *PaymentHandler) GetPayment(c *gin.Context) {
+	paymentID := c.Param("id")
+	h.logger.Debug("Getting payment via API", "id", paymentID)
+
+	if paymentID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Payment ID is required",
+		})
+		return
+	}
+
+	// Call service
+	payment, err := h.paymentService.GetPayment(c.Request.Context(), paymentID)
+	if err != nil {
+		h.logger.Error("Failed to get payment", "error", err, "id", paymentID)
+
+		if strings.Contains(err.Error(), "not found") {
+			c.JSON(http.StatusNotFound, gin.H{
+				"error": "Payment not found",
+			})
+			return
+		}
+
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to get payment",
+		})
+		return
+	}
+
+	h.logger.Debug("Payment retrieved successfully via API", "id", paymentID)
+	c.JSON(http.StatusOK, gin.H{
+		"data": payment,
+	})
+}
+
+// RefundPayment handles POST /api/v1/payments/:id/refund
+func (h *PaymentHandler) RefundPayment(c *gin.Context) {
+	paymentID := c.Param("id")
+	h.logger.Debug("Processing refund via API", "payment_id", paymentID)
+
+	if paymentID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Payment ID is required",
+		})
+		return
+	}
+
+	var req struct {
+		Amount float64 `json:"amount" binding:"required,gt=0"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		h.logger.Error("Failed to bind refund request", "error", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "Invalid request format",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	// Call service
+	refund, err := h.paymentService.RefundPayment(c.Request.Context(), paymentID, req.Amount)
+	if err != nil {
+		h.logger.Error("Failed to process refund", "error", err, "payment_id", paymentID, "amount", req.Amount)
+
+		if strings.Contains(err.Error(), "not found") {
+			c.JSON(http.StatusNotFound, gin.H{
+				"error": "Payment not found",
+			})
+			return
+		}
+
+		if strings.Contains(err.Error(), "cannot be refunded") {
+			c.JSON(http.StatusConflict, gin.H{
+				"error": err.Error(),
+			})
+			return
+		}
+
+		if strings.Contains(err.Error(), "cannot exceed") {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": err.Error(),
+			})
+			return
+		}
+
+		if strings.Contains(err.Error(), "processing failed") {
+			c.JSON(http.StatusPaymentRequired, gin.H{
+				"error": "Refund processing failed",
+			})
+			return
+		}
+
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to process refund",
+		})
+		return
+	}
+
+	h.logger.Info("Refund processed successfully via API", "refund_id", refund.ID, "payment_id", paymentID, "amount", req.Amount)
+	c.JSON(http.StatusCreated, gin.H{
+		"message": "Refund processed successfully",
+		"data":    refund,
+	})
+}
+
+// GetOrderPayments handles GET /api/v1/orders/:order_id/payments
+func (h *PaymentHandler) GetOrderPayments(c *gin.Context) {
+	orderID := c.Param("order_id")
+	h.logger.Debug("Getting order payments via API", "order_id", orderID)
+
+	if orderID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Order ID is required",
+		})
+		return
+	}
+
+	// Call service
+	payments, err := h.paymentService.GetOrderPayments(c.Request.Context(), orderID)
+	if err != nil {
+		h.logger.Error("Failed to get order payments", "error", err, "order_id", orderID)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to get order payments",
+		})
+		return
+	}
+
+	h.logger.Debug("Order payments retrieved successfully via API", "order_id", orderID, "count", len(payments))
+	c.JSON(http.StatusOK, gin.H{
+		"data": payments,
+	})
+}
+
+// RegisterRoutes registers all payment routes
+func (h *PaymentHandler) RegisterRoutes(router *gin.RouterGroup) {
+	payments := router.Group("/payments")
+	{
+		payments.POST("", h.ProcessPayment)
+		payments.GET("/:id", h.GetPayment)
+		payments.POST("/:id/refund", h.RefundPayment)
+	}
+
+	// Order payment routes
+	orders := router.Group("/orders")
+	{
+		orders.GET("/:order_id/payments", h.GetOrderPayments)
+	}
+}

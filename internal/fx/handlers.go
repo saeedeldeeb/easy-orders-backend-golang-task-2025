@@ -10,13 +10,10 @@ import (
 var HandlersModule = fx.Module("handlers",
 	fx.Provide(
 		handlers.NewUserHandler,
-
-		// TODO: Add other handlers as they are implemented
-		// handlers.NewProductHandler,
-		// handlers.NewOrderHandler,
-		// handlers.NewInventoryHandler,
-		// handlers.NewPaymentHandler,
-		// handlers.NewNotificationHandler,
-		// handlers.NewReportHandler,
+		handlers.NewProductHandler,
+		handlers.NewOrderHandler,
+		handlers.NewPaymentHandler,
+		handlers.NewInventoryHandler,
+		handlers.NewAdminHandler,
 	),
 )
