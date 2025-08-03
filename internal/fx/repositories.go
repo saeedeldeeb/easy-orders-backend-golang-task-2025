@@ -15,30 +15,46 @@ var RepositoriesModule = fx.Module("repositories",
 			fx.As(new(repository.UserRepository)),
 		),
 
-		// TODO: Add other repositories as they are implemented
-		// fx.Annotate(
-		//     repository.NewProductRepository,
-		//     fx.As(new(repository.ProductRepository)),
-		// ),
-		// fx.Annotate(
-		//     repository.NewOrderRepository,
-		//     fx.As(new(repository.OrderRepository)),
-		// ),
-		// fx.Annotate(
-		//     repository.NewInventoryRepository,
-		//     fx.As(new(repository.InventoryRepository)),
-		// ),
-		// fx.Annotate(
-		//     repository.NewPaymentRepository,
-		//     fx.As(new(repository.PaymentRepository)),
-		// ),
-		// fx.Annotate(
-		//     repository.NewNotificationRepository,
-		//     fx.As(new(repository.NotificationRepository)),
-		// ),
-		// fx.Annotate(
-		//     repository.NewAuditLogRepository,
-		//     fx.As(new(repository.AuditLogRepository)),
-		// ),
+		// Product repository
+		fx.Annotate(
+			repository.NewProductRepository,
+			fx.As(new(repository.ProductRepository)),
+		),
+
+		// Order repository
+		fx.Annotate(
+			repository.NewOrderRepository,
+			fx.As(new(repository.OrderRepository)),
+		),
+
+		// Order item repository
+		fx.Annotate(
+			repository.NewOrderItemRepository,
+			fx.As(new(repository.OrderItemRepository)),
+		),
+
+		// Inventory repository
+		fx.Annotate(
+			repository.NewInventoryRepository,
+			fx.As(new(repository.InventoryRepository)),
+		),
+
+		// Payment repository
+		fx.Annotate(
+			repository.NewPaymentRepository,
+			fx.As(new(repository.PaymentRepository)),
+		),
+
+		// Notification repository
+		fx.Annotate(
+			repository.NewNotificationRepository,
+			fx.As(new(repository.NotificationRepository)),
+		),
+
+		// Audit log repository
+		fx.Annotate(
+			repository.NewAuditLogRepository,
+			fx.As(new(repository.AuditLogRepository)),
+		),
 	),
 )

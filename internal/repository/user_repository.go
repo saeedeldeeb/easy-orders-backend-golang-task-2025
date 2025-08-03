@@ -2,13 +2,12 @@ package repository
 
 import (
 	"context"
-	"fmt"
 
 	"easy-orders-backend/internal/models"
 	"easy-orders-backend/pkg/database"
 	"easy-orders-backend/pkg/logger"
 
-	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 // userRepository implements UserRepository interface
@@ -28,11 +27,12 @@ func NewUserRepository(db *database.DB, logger *logger.Logger) UserRepository {
 func (r *userRepository) Create(ctx context.Context, user *models.User) error {
 	r.logger.Debug("Creating user in database", "email", user.Email)
 
-	// Generate UUID for new user
-	user.ID = uuid.New().String()
+	// Create user in database
+	if err := r.db.WithContext(ctx).Create(user).Error; err != nil {
+		r.logger.Error("Failed to create user", "error", err, "email", user.Email)
+		return err
+	}
 
-	// TODO: Replace with actual GORM model and database insert
-	// For now, just simulate the operation
 	r.logger.Info("User created in database", "id", user.ID, "email", user.Email)
 	return nil
 }
@@ -40,38 +40,45 @@ func (r *userRepository) Create(ctx context.Context, user *models.User) error {
 func (r *userRepository) GetByID(ctx context.Context, id string) (*models.User, error) {
 	r.logger.Debug("Getting user by ID", "id", id)
 
-	// TODO: Replace with actual GORM query
-	// For now, return a mock user
-	user := &models.User{
-		ID:    id,
-		Email: "user@example.com",
-		Name:  "Mock User",
+	var user models.User
+	if err := r.db.WithContext(ctx).First(&user, "id = ?", id).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			r.logger.Debug("User not found", "id", id)
+			return nil, nil
+		}
+		r.logger.Error("Failed to get user by ID", "error", err, "id", id)
+		return nil, err
 	}
 
 	r.logger.Debug("User retrieved from database", "id", id)
-	return user, nil
+	return &user, nil
 }
 
 func (r *userRepository) GetByEmail(ctx context.Context, email string) (*models.User, error) {
 	r.logger.Debug("Getting user by email", "email", email)
 
-	// TODO: Replace with actual GORM query
-	// For now, return a mock user
-	user := &models.User{
-		ID:    uuid.New().String(),
-		Email: email,
-		Name:  "Mock User",
+	var user models.User
+	if err := r.db.WithContext(ctx).First(&user, "email = ?", email).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			r.logger.Debug("User not found", "email", email)
+			return nil, nil
+		}
+		r.logger.Error("Failed to get user by email", "error", err, "email", email)
+		return nil, err
 	}
 
 	r.logger.Debug("User retrieved from database", "email", email)
-	return user, nil
+	return &user, nil
 }
 
 func (r *userRepository) Update(ctx context.Context, user *models.User) error {
 	r.logger.Debug("Updating user in database", "id", user.ID)
 
-	// TODO: Replace with actual GORM update
-	// For now, just simulate the operation
+	if err := r.db.WithContext(ctx).Save(user).Error; err != nil {
+		r.logger.Error("Failed to update user", "error", err, "id", user.ID)
+		return err
+	}
+
 	r.logger.Info("User updated in database", "id", user.ID)
 	return nil
 }
@@ -79,8 +86,12 @@ func (r *userRepository) Update(ctx context.Context, user *models.User) error {
 func (r *userRepository) Delete(ctx context.Context, id string) error {
 	r.logger.Debug("Deleting user from database", "id", id)
 
-	// TODO: Replace with actual GORM delete
-	// For now, just simulate the operation
+	// Soft delete the user
+	if err := r.db.WithContext(ctx).Delete(&models.User{}, "id = ?", id).Error; err != nil {
+		r.logger.Error("Failed to delete user", "error", err, "id", id)
+		return err
+	}
+
 	r.logger.Info("User deleted from database", "id", id)
 	return nil
 }
@@ -88,15 +99,14 @@ func (r *userRepository) Delete(ctx context.Context, id string) error {
 func (r *userRepository) List(ctx context.Context, offset, limit int) ([]*models.User, error) {
 	r.logger.Debug("Listing users from database", "offset", offset, "limit", limit)
 
-	// TODO: Replace with actual GORM query
-	// For now, return mock users
-	users := make([]*models.User, 0)
-	for i := 0; i < limit && i < 5; i++ { // Mock up to 5 users
-		users = append(users, &models.User{
-			ID:    uuid.New().String(),
-			Email: fmt.Sprintf("user%d@example.com", i+1),
-			Name:  fmt.Sprintf("Mock User %d", i+1),
-		})
+	var users []*models.User
+	if err := r.db.WithContext(ctx).
+		Offset(offset).
+		Limit(limit).
+		Order("created_at DESC").
+		Find(&users).Error; err != nil {
+		r.logger.Error("Failed to list users", "error", err)
+		return nil, err
 	}
 
 	r.logger.Debug("Users retrieved from database", "count", len(users))
