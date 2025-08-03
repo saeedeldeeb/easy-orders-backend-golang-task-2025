@@ -6,11 +6,11 @@ services:
     image: postgres:15-alpine
     container_name: easy-orders-postgres
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: easy_orders
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     ports:
-      - '5433:5432'
+      - '${DB_EXTERNAL_PORT}:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
@@ -27,7 +27,7 @@ services:
     image: redis:7-alpine
     container_name: easy-orders-redis
     ports:
-      - '6379:6379'
+      - '${REDIS_PORT}:6379'
     volumes:
       - redis_data:/data
     networks:
@@ -46,19 +46,19 @@ services:
     container_name: easy-orders-app
     environment:
       - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_USER=postgres
-      - DB_PASSWORD=postgres
-      - DB_NAME=easy_orders
-      - DB_SSLMODE=disable
+      - DB_PORT=${DB_PORT}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - DB_SSLMODE=${DB_SSLMODE}
       - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
-      - SERVER_PORT=8080
-      - LOG_LEVEL=info
-      - ENVIRONMENT=docker
+      - REDIS_PORT=${REDIS_PORT}
+      - JWT_SECRET=${JWT_SECRET}
+      - SERVER_PORT=${SERVER_PORT}
+      - LOG_LEVEL=${LOG_LEVEL}
+      - ENVIRONMENT=${ENVIRONMENT}
     ports:
-      - '8080:8080'
+      - '${SERVER_PORT}:8080'
     depends_on:
       postgres:
         condition: service_healthy
@@ -75,7 +75,7 @@ services:
     image: adminer:latest
     container_name: easy-orders-adminer
     ports:
-      - '8081:8080'
+      - '${ADMINER_PORT}:8080'
     depends_on:
       - postgres
     networks:

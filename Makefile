@@ -14,6 +14,8 @@ help:
 	@echo "  docker-down   - Stop all services"
 	@echo "  docker-build  - Build Docker image"
 	@echo "  dev           - Start development environment with hot reload"
+	@echo "  env-setup     - Set up environment configuration from template"
+	@echo "  env-check     - Validate docker-compose configuration"
 	@echo "  migrate-up    - Run database migrations"
 	@echo "  migrate-down  - Rollback database migrations"
 	@echo "  seed          - Seed database with test data"
@@ -40,8 +42,9 @@ test-race:
 clean:
 	rm -rf bin/ tmp/
 
-# Start all services with Docker Compose
+# Start all services with Docker Compose (uses .env file)
 docker-up:
+	@echo "Starting services with configuration from .env file..."
 	docker-compose up -d
 
 # Stop all services
@@ -52,8 +55,9 @@ docker-down:
 docker-build:
 	docker build -t easy-orders-backend .
 
-# Start development environment with hot reload
+# Start development environment with hot reload (uses .env file)
 dev:
+	@echo "Starting development environment with configuration from .env file..."
 	docker-compose -f docker-compose.dev.yml up
 
 # Run database migrations (placeholder - will implement later)
@@ -101,3 +105,18 @@ logs:
 # View development logs
 logs-dev:
 	docker-compose -f docker-compose.dev.yml logs -f app-dev
+
+# Set up environment configuration
+env-setup:
+	@if [ ! -f .env ]; then \
+		echo "Creating .env from .env.example..."; \
+		cp .env.example .env; \
+		echo "✅ .env file created. Please edit it with your configuration."; \
+	else \
+		echo "✅ .env file already exists."; \
+	fi
+
+# Validate environment configuration
+env-check:
+	@echo "Validating docker-compose configuration..."
+	docker-compose config > /dev/null && echo "✅ Configuration is valid"
