@@ -286,10 +286,32 @@ type NotificationResponse struct {
 	ReadAt  *time.Time `json:"read_at,omitempty"`
 }
 
+// Report Service DTOs
+type GenerateSalesReportRequest struct {
+	StartDate string `json:"start_date"`
+	EndDate   string `json:"end_date"`
+}
+
+type GetSalesReportRequest struct {
+	Date string `json:"date"`
+}
+
+type LowStockRequest struct {
+	Threshold int `json:"threshold"`
+}
+
 type LowStockResponse struct {
-	Threshold int            `json:"threshold"`
-	Items     []LowStockItem `json:"items"`
-	Count     int            `json:"count"`
+	Threshold int               `json:"threshold"`
+	Products  []ProductLowStock `json:"products"`
+	Count     int               `json:"count"`
+}
+
+type ProductLowStock struct {
+	ProductID    string `json:"product_id"`
+	ProductName  string `json:"product_name"`
+	SKU          string `json:"sku"`
+	CurrentStock int    `json:"current_stock"`
+	MinThreshold int    `json:"min_threshold"`
 }
 
 type LowStockItem struct {
@@ -301,13 +323,14 @@ type LowStockItem struct {
 }
 
 type SalesReportResponse struct {
-	Date              string         `json:"date"`
-	TotalSales        float64        `json:"total_sales"`
-	TotalOrders       int            `json:"total_orders"`
-	CompletedOrders   int            `json:"completed_orders"`
-	CancelledOrders   int            `json:"cancelled_orders"`
-	AverageOrderValue float64        `json:"average_order_value"`
-	OrdersByStatus    map[string]int `json:"orders_by_status"`
+	Date              string                 `json:"date"`
+	TotalSales        float64                `json:"total_sales"`
+	TotalOrders       int                    `json:"total_orders"`
+	CompletedOrders   int                    `json:"completed_orders"`
+	CancelledOrders   int                    `json:"cancelled_orders"`
+	AverageOrderValue float64                `json:"average_order_value"`
+	OrdersByStatus    map[string]int         `json:"orders_by_status"`
+	Report            map[string]interface{} `json:"report"`
 }
 
 type InventoryReportResponse struct {

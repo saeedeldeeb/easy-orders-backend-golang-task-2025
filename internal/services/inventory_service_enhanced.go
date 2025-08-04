@@ -398,7 +398,7 @@ func (s *enhancedInventoryService) GetLowStockAlert(ctx context.Context, thresho
 
 	return &LowStockResponse{
 		Threshold: threshold,
-		Items:     alerts,
+		Products:  convertToProductLowStock(alerts),
 		Count:     len(alerts),
 	}, nil
 }

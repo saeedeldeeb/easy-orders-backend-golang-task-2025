@@ -198,7 +198,22 @@ func (s *inventoryService) GetLowStockAlert(ctx context.Context, threshold int) 
 
 	return &LowStockResponse{
 		Threshold: threshold,
-		Items:     alerts,
+		Products:  convertToProductLowStock(alerts),
 		Count:     len(alerts),
 	}, nil
+}
+
+// Helper function to convert LowStockItem to ProductLowStock
+func convertToProductLowStock(items []LowStockItem) []ProductLowStock {
+	products := make([]ProductLowStock, len(items))
+	for i, item := range items {
+		products[i] = ProductLowStock{
+			ProductID:    item.ProductID,
+			ProductName:  item.ProductName,
+			SKU:          item.ProductSKU,
+			CurrentStock: item.CurrentStock,
+			MinThreshold: item.MinStock,
+		}
+	}
+	return products
 }

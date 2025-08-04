@@ -83,4 +83,5 @@ var ApplicationModules = fx.Options(
 	WorkersModule,
 	NotificationsModule,
 	PaymentsModule,
+	ReportsModule,
 )

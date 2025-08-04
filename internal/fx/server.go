@@ -40,6 +40,7 @@ func NewGinEngine(
 	backgroundHandler *handlers.BackgroundHandler,
 	notificationHandler *handlers.NotificationHandler,
 	paymentEnhancedHandler *handlers.PaymentEnhancedHandler,
+	reportEnhancedHandler *handlers.ReportEnhancedHandler,
 ) *gin.Engine {
 	// Set gin mode based on environment
 	if cfg.Server.Environment == "production" {
@@ -97,6 +98,7 @@ func NewGinEngine(
 			backgroundHandler.RegisterRoutes(protected)
 			notificationHandler.RegisterRoutes(protected)
 			paymentEnhancedHandler.RegisterRoutes(protected)
+			reportEnhancedHandler.RegisterRoutes(protected)
 		}
 
 		// Admin routes (require admin role)

@@ -19,5 +19,6 @@ var HandlersModule = fx.Module("handlers",
 		handlers.NewBackgroundHandler,
 		handlers.NewNotificationHandler,
 		handlers.NewPaymentEnhancedHandler,
+		handlers.NewReportEnhancedHandler,
 	),
 )
