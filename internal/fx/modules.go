@@ -80,4 +80,5 @@ var ApplicationModules = fx.Options(
 	ServicesModule,
 	HandlersModule,
 	ConcurrencyModule,
+	WorkersModule,
 )

@@ -37,6 +37,7 @@ func NewGinEngine(
 	inventoryHandler *handlers.InventoryHandler,
 	adminHandler *handlers.AdminHandler,
 	pipelineHandler *handlers.OrderPipelineHandler,
+	backgroundHandler *handlers.BackgroundHandler,
 ) *gin.Engine {
 	// Set gin mode based on environment
 	if cfg.Server.Environment == "production" {
