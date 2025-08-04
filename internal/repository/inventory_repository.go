@@ -236,15 +236,60 @@ func (r *inventoryRepository) GetLowStockItems(ctx context.Context, threshold in
 func (r *inventoryRepository) BulkReserve(ctx context.Context, items []InventoryReservation) error {
 	r.logger.Debug("Bulk reserving inventory items", "count", len(items))
 
+	// Use a single transaction for all operations
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// Track successful reservations for rollback
+		var reservedItems []InventoryReservation
+
 		for _, item := range items {
-			if err := r.ReserveStock(ctx, item.ProductID, item.Quantity); err != nil {
-				r.logger.Error("Failed to reserve item in bulk operation", "error", err, "product_id", item.ProductID)
+			// Reserve using the transaction context
+			var inventory models.Inventory
+			if err := tx.First(&inventory, "product_id = ?", item.ProductID).Error; err != nil {
+				r.logger.Error("Failed to get inventory for bulk reservation", "error", err, "product_id", item.ProductID)
 				return err
 			}
+
+			// Check if we can reserve the requested quantity
+			if !inventory.CanReserve(item.Quantity) {
+				r.logger.Warn("Insufficient stock for bulk reservation",
+					"product_id", item.ProductID,
+					"requested", item.Quantity,
+					"available", inventory.Available)
+				return fmt.Errorf("insufficient stock for product %s: requested %d, available %d",
+					item.ProductID, item.Quantity, inventory.Available)
+			}
+
+			oldVersion := inventory.Version
+			if err := inventory.Reserve(item.Quantity); err != nil {
+				return err
+			}
+			inventory.Version++
+
+			// Update with version check for optimistic locking
+			result := tx.Model(&inventory).
+				Where("product_id = ? AND version = ?", item.ProductID, oldVersion).
+				Updates(map[string]interface{}{
+					"reserved":  inventory.Reserved,
+					"available": inventory.Available,
+					"version":   inventory.Version,
+				})
+
+			if result.Error != nil {
+				r.logger.Error("Failed to reserve inventory in bulk", "error", result.Error, "product_id", item.ProductID)
+				return result.Error
+			}
+
+			if result.RowsAffected == 0 {
+				r.logger.Warn("Bulk inventory reservation failed due to version mismatch",
+					"product_id", item.ProductID, "expected_version", oldVersion)
+				return fmt.Errorf("inventory reservation conflict for product %s, please retry", item.ProductID)
+			}
+
+			reservedItems = append(reservedItems, item)
+			r.logger.Debug("Item reserved in bulk operation", "product_id", item.ProductID, "quantity", item.Quantity)
 		}
 
-		r.logger.Info("Bulk inventory reservation completed successfully", "count", len(items))
+		r.logger.Info("Bulk inventory reservation completed successfully", "count", len(reservedItems))
 		return nil
 	})
 }
@@ -252,15 +297,50 @@ func (r *inventoryRepository) BulkReserve(ctx context.Context, items []Inventory
 func (r *inventoryRepository) BulkRelease(ctx context.Context, items []InventoryReservation) error {
 	r.logger.Debug("Bulk releasing inventory items", "count", len(items))
 
+	// Use a single transaction for all operations
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var releasedItems []InventoryReservation
+
 		for _, item := range items {
-			if err := r.ReleaseStock(ctx, item.ProductID, item.Quantity); err != nil {
-				r.logger.Error("Failed to release item in bulk operation", "error", err, "product_id", item.ProductID)
+			// Release using the transaction context
+			var inventory models.Inventory
+			if err := tx.First(&inventory, "product_id = ?", item.ProductID).Error; err != nil {
+				r.logger.Error("Failed to get inventory for bulk release", "error", err, "product_id", item.ProductID)
 				return err
 			}
+
+			oldVersion := inventory.Version
+			if err := inventory.Release(item.Quantity); err != nil {
+				r.logger.Error("Failed to release inventory in bulk", "error", err, "product_id", item.ProductID, "quantity", item.Quantity)
+				return err
+			}
+			inventory.Version++
+
+			// Update with version check for optimistic locking
+			result := tx.Model(&inventory).
+				Where("product_id = ? AND version = ?", item.ProductID, oldVersion).
+				Updates(map[string]interface{}{
+					"reserved":  inventory.Reserved,
+					"available": inventory.Available,
+					"version":   inventory.Version,
+				})
+
+			if result.Error != nil {
+				r.logger.Error("Failed to release inventory in bulk", "error", result.Error, "product_id", item.ProductID)
+				return result.Error
+			}
+
+			if result.RowsAffected == 0 {
+				r.logger.Warn("Bulk inventory release failed due to version mismatch",
+					"product_id", item.ProductID, "expected_version", oldVersion)
+				return fmt.Errorf("inventory release conflict for product %s, please retry", item.ProductID)
+			}
+
+			releasedItems = append(releasedItems, item)
+			r.logger.Debug("Item released in bulk operation", "product_id", item.ProductID, "quantity", item.Quantity)
 		}
 
-		r.logger.Info("Bulk inventory release completed successfully", "count", len(items))
+		r.logger.Info("Bulk inventory release completed successfully", "count", len(releasedItems))
 		return nil
 	})
 }

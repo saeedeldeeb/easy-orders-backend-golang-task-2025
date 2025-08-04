@@ -49,6 +49,40 @@ type InventoryService interface {
 	GetLowStockAlert(ctx context.Context, threshold int) (*LowStockResponse, error)
 }
 
+// EnhancedInventoryService extends InventoryService with advanced concurrency features
+type EnhancedInventoryService interface {
+	InventoryService
+	ReserveInventoryConcurrent(ctx context.Context, items []InventoryItem) error
+	CheckAvailabilityWithCache(ctx context.Context, productID string, quantity int) (bool, error)
+	ProcessHighVolumeOrders(ctx context.Context, orders []HighVolumeOrder, workerCount int) (*HighVolumeProcessingResult, error)
+}
+
+// High-volume processing types
+type HighVolumeOrder struct {
+	OrderID   string `json:"order_id"`
+	ProductID string `json:"product_id"`
+	Quantity  int    `json:"quantity"`
+}
+
+type HighVolumeOrderResult struct {
+	OrderID        string        `json:"order_id"`
+	ProductID      string        `json:"product_id"`
+	Quantity       int           `json:"quantity"`
+	StartTime      time.Time     `json:"start_time"`
+	EndTime        time.Time     `json:"end_time"`
+	ProcessingTime time.Duration `json:"processing_time"`
+	Error          error         `json:"error,omitempty"`
+}
+
+type HighVolumeProcessingResult struct {
+	TotalOrders       int                     `json:"total_orders"`
+	SuccessfulOrders  int                     `json:"successful_orders"`
+	FailedOrders      int                     `json:"failed_orders"`
+	SuccessfulResults []HighVolumeOrderResult `json:"successful_results"`
+	FailedResults     []HighVolumeOrderResult `json:"failed_results"`
+	ProcessingTime    time.Duration           `json:"processing_time"`
+}
+
 // PaymentService defines payment business logic
 type PaymentService interface {
 	ProcessPayment(ctx context.Context, req ProcessPaymentRequest) (*PaymentResponse, error)
