@@ -17,5 +17,6 @@ var HandlersModule = fx.Module("handlers",
 		handlers.NewAdminHandler,
 		handlers.NewOrderPipelineHandler,
 		handlers.NewBackgroundHandler,
+		handlers.NewNotificationHandler,
 	),
 )
