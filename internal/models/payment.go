@@ -42,8 +42,24 @@ type Payment struct {
 	ExternalReference string        `gorm:"type:varchar(255)" json:"external_reference"`
 	FailureReason     string        `gorm:"type:text" json:"failure_reason"`
 	ProcessedAt       *time.Time    `json:"processed_at"`
-	CreatedAt         time.Time     `json:"created_at"`
-	UpdatedAt         time.Time     `json:"updated_at"`
+
+	// Idempotency and retry fields
+	IdempotencyKey string     `gorm:"type:varchar(255);uniqueIndex" json:"idempotency_key"`
+	AttemptCount   int        `gorm:"default:0" json:"attempt_count"`
+	MaxRetries     int        `gorm:"default:3" json:"max_retries"`
+	NextRetryAt    *time.Time `json:"next_retry_at"`
+	LastAttemptAt  *time.Time `json:"last_attempt_at"`
+
+	// Gateway information
+	Gateway       string  `gorm:"type:varchar(50)" json:"gateway"`
+	GatewayTxnID  string  `gorm:"type:varchar(255)" json:"gateway_txn_id"`
+	ProcessingFee float64 `gorm:"type:decimal(10,2);default:0" json:"processing_fee"`
+
+	// Metadata and audit
+	Metadata string `gorm:"type:jsonb" json:"metadata"` // JSON field for additional data
+
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 
 	// Relationships
 	Order     *Order     `gorm:"foreignKey:OrderID;constraint:OnDelete:RESTRICT" json:"order,omitempty"`
@@ -116,4 +132,51 @@ func (p *Payment) MarkCompleted() {
 func (p *Payment) MarkFailed(reason string) {
 	p.Status = PaymentStatusFailed
 	p.FailureReason = reason
+	now := time.Now()
+	p.LastAttemptAt = &now
+}
+
+// CanRetryAt checks if payment can be retried at the specified time
+func (p *Payment) CanRetryAt(t time.Time) bool {
+	if !p.CanRetry() {
+		return false
+	}
+	if p.AttemptCount >= p.MaxRetries {
+		return false
+	}
+	if p.NextRetryAt != nil && t.Before(*p.NextRetryAt) {
+		return false
+	}
+	return true
+}
+
+// IncrementAttempt increments the attempt count and sets the last attempt time
+func (p *Payment) IncrementAttempt() {
+	p.AttemptCount++
+	now := time.Now()
+	p.LastAttemptAt = &now
+}
+
+// SetNextRetryAt sets when the next retry attempt should occur
+func (p *Payment) SetNextRetryAt(t time.Time) {
+	p.NextRetryAt = &t
+}
+
+// IsRetryDue checks if a retry is due now
+func (p *Payment) IsRetryDue() bool {
+	if !p.CanRetry() {
+		return false
+	}
+	if p.AttemptCount >= p.MaxRetries {
+		return false
+	}
+	if p.NextRetryAt == nil {
+		return true
+	}
+	return time.Now().After(*p.NextRetryAt)
+}
+
+// HasIdempotencyKey checks if payment has an idempotency key
+func (p *Payment) HasIdempotencyKey() bool {
+	return p.IdempotencyKey != ""
 }

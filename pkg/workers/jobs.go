@@ -70,6 +70,7 @@ const (
 	JobTypeCacheWarming        = "cache_warming"
 	JobTypeCleanup             = "cleanup"
 	JobTypeDataExport          = "data_export"
+	JobTypePaymentRetry        = "payment_retry"
 )
 
 // Priority levels
