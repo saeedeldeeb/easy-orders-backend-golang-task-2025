@@ -350,18 +350,3 @@ func (h *OrderHandler) GetUserOrders(c *gin.Context) {
 		"data": response,
 	})
 }
-
-// RegisterRoutes registers all order routes
-func (h *OrderHandler) RegisterRoutes(router *gin.RouterGroup) {
-	orders := router.Group("/orders")
-	{
-		orders.POST("", h.CreateOrder)
-		orders.GET("", h.ListOrders)
-		orders.GET("/:id", h.GetOrder)
-		orders.PATCH("/:id/status", h.UpdateOrderStatus)
-		orders.PATCH("/:id/cancel", h.CancelOrder)
-	}
-
-	// User-specific order routes (moved to avoid conflict with /users/:id)
-	router.GET("/orders/user/:user_id", h.GetUserOrders)
-}

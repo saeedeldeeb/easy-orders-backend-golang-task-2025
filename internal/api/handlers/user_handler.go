@@ -182,20 +182,3 @@ func (h *UserHandler) AuthenticateUser(c *gin.Context) {
 
 	c.JSON(http.StatusOK, auth)
 }
-
-// RegisterRoutes registers all user routes
-func (h *UserHandler) RegisterRoutes(router *gin.RouterGroup) {
-	users := router.Group("/users")
-	{
-		users.POST("", h.CreateUser)
-		users.GET("", h.ListUsers)
-		users.GET("/:id", h.GetUser)
-		users.PUT("/:id", h.UpdateUser)
-		users.DELETE("/:id", h.DeleteUser)
-	}
-
-	auth := router.Group("/auth")
-	{
-		auth.POST("/login", h.AuthenticateUser)
-	}
-}

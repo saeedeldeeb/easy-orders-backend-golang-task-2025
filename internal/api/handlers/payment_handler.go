@@ -218,16 +218,3 @@ func (h *PaymentHandler) GetOrderPayments(c *gin.Context) {
 		"data": payments,
 	})
 }
-
-// RegisterRoutes registers all payment routes
-func (h *PaymentHandler) RegisterRoutes(router *gin.RouterGroup) {
-	payments := router.Group("/payments")
-	{
-		payments.POST("", h.ProcessPayment)
-		payments.GET("/:id", h.GetPayment)
-		payments.POST("/:id/refund", h.RefundPayment)
-	}
-
-	// Order payment routes (moved to avoid conflict with /orders/:id)
-	router.GET("/payments/order/:order_id", h.GetOrderPayments)
-}

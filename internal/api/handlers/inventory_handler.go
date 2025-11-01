@@ -250,15 +250,3 @@ func (h *InventoryHandler) GetLowStockAlert(c *gin.Context) {
 		"data": response,
 	})
 }
-
-// RegisterRoutes registers all inventory routes
-func (h *InventoryHandler) RegisterRoutes(router *gin.RouterGroup) {
-	inventory := router.Group("/inventory")
-	{
-		inventory.GET("/check/:product_id", h.CheckAvailability)
-		inventory.POST("/reserve", h.ReserveInventory)
-		inventory.POST("/release", h.ReleaseInventory)
-		inventory.PUT("/:product_id", h.UpdateStock)
-		inventory.GET("/low-stock", h.GetLowStockAlert)
-	}
-}

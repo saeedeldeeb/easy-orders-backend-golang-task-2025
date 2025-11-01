@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"easy-orders-backend/internal/api/handlers"
+	"easy-orders-backend/internal/api/routes"
 	"easy-orders-backend/internal/config"
 	"easy-orders-backend/internal/middleware"
 	"easy-orders-backend/pkg/logger"
@@ -36,11 +37,6 @@ func NewGinEngine(
 	paymentHandler *handlers.PaymentHandler,
 	inventoryHandler *handlers.InventoryHandler,
 	adminHandler *handlers.AdminHandler,
-	pipelineHandler *handlers.OrderPipelineHandler,
-	backgroundHandler *handlers.BackgroundHandler,
-	notificationHandler *handlers.NotificationHandler,
-	paymentEnhancedHandler *handlers.PaymentEnhancedHandler,
-	reportEnhancedHandler *handlers.ReportEnhancedHandler,
 ) *gin.Engine {
 	// Set gin mode based on environment
 	if cfg.Server.Environment == "production" {
@@ -84,21 +80,15 @@ func NewGinEngine(
 	v1 := engine.Group("/api/v1")
 	{
 		// Public routes (no authentication required)
-		userHandler.RegisterRoutes(v1) // Includes auth endpoint
+		routes.RegisterUserRoutes(v1, userHandler) // Includes auth endpoint
 
 		// Protected routes (require authentication)
 		protected := v1.Group("")
 		protected.Use(authMiddleware.RequireAuth())
 		{
-			productHandler.RegisterRoutes(protected)
-			orderHandler.RegisterRoutes(protected)
-			paymentHandler.RegisterRoutes(protected)
-			inventoryHandler.RegisterRoutes(protected)
-			pipelineHandler.RegisterRoutes(protected)
-			backgroundHandler.RegisterRoutes(protected)
-			notificationHandler.RegisterRoutes(protected)
-			paymentEnhancedHandler.RegisterRoutes(protected)
-			reportEnhancedHandler.RegisterRoutes(protected)
+			routes.RegisterProductRoutes(protected, productHandler, inventoryHandler)
+			routes.RegisterOrderRoutes(protected, orderHandler)
+			routes.RegisterPaymentRoutes(protected, paymentHandler)
 		}
 
 		// Admin routes (require admin role)
@@ -106,7 +96,7 @@ func NewGinEngine(
 		admin.Use(authMiddleware.RequireAuth())
 		admin.Use(authMiddleware.RequireAdmin())
 		{
-			adminHandler.RegisterRoutes(admin)
+			routes.RegisterAdminRoutes(admin, adminHandler, inventoryHandler)
 		}
 
 		// Health check under API version

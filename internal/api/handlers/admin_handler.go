@@ -239,25 +239,3 @@ func (h *AdminHandler) GenerateUserActivityReport(c *gin.Context) {
 		"data": report,
 	})
 }
-
-// RegisterRoutes registers all admin routes
-func (h *AdminHandler) RegisterRoutes(router *gin.RouterGroup) {
-	admin := router.Group("/admin")
-	{
-		// Order management
-		orders := admin.Group("/orders")
-		{
-			orders.GET("", h.GetAllOrders)
-			orders.PATCH("/:id/status", h.UpdateOrderStatus)
-		}
-
-		// Reports
-		reports := admin.Group("/reports")
-		{
-			reports.GET("/sales/daily", h.GenerateDailySalesReport)
-			reports.GET("/inventory", h.GenerateInventoryReport)
-			reports.GET("/products/top", h.GenerateTopProductsReport)
-			reports.GET("/users/activity", h.GenerateUserActivityReport)
-		}
-	}
-}

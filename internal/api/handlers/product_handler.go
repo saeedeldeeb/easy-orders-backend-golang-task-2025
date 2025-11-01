@@ -283,16 +283,3 @@ func (h *ProductHandler) SearchProducts(c *gin.Context) {
 		"data": response,
 	})
 }
-
-// RegisterRoutes registers all product routes
-func (h *ProductHandler) RegisterRoutes(router *gin.RouterGroup) {
-	products := router.Group("/products")
-	{
-		products.POST("", h.CreateProduct)
-		products.GET("", h.ListProducts)
-		products.GET("/search", h.SearchProducts)
-		products.GET("/:id", h.GetProduct)
-		products.PUT("/:id", h.UpdateProduct)
-		products.DELETE("/:id", h.DeleteProduct)
-	}
-}
