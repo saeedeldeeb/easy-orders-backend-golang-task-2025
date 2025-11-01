@@ -119,9 +119,7 @@
 ```json
 {
   "message": "Operation completed successfully",
-  "data": {
-    // Response data here
-  }
+  "data": {}
 }
 ```
 
@@ -139,7 +137,7 @@
 ```json
 {
   "data": {
-    "items": [...],
+    "items": [],
     "offset": 0,
     "limit": 20,
     "total": 150

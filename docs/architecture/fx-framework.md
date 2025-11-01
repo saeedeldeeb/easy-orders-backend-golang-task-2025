@@ -153,26 +153,26 @@ The DI foundation makes it easy to add new components:
 
 ### **1. Add New Repository**
 
-```go
-// 1. Define interface in internal/repository/interfaces.go
-// 2. Implement in internal/repository/new_repo.go
-// 3. Register in internal/fx/repositories.go
+```text
+1. Define interface in internal/repository/interfaces.go
+2. Implement in internal/repository/new_repo.go
+3. Register in internal/fx/repositories.go
 ```
 
 ### **2. Add New Service**
 
-```go
-// 1. Define interface in internal/services/interfaces.go
-// 2. Implement in internal/services/new_service.go
-// 3. Register in internal/fx/services.go
+```text
+1. Define interface in internal/services/interfaces.go
+2. Implement in internal/services/new_service.go
+3. Register in internal/fx/services.go
 ```
 
 ### **3. Add New Handler**
 
-```go
-// 1. Implement in internal/api/handlers/new_handler.go
-// 2. Register in internal/fx/handlers.go
-// 3. Wire routes in internal/fx/server.go
+```text
+1. Implement in internal/api/handlers/new_handler.go
+2. Register in internal/fx/handlers.go
+3. Wire routes in internal/fx/server.go
 ```
 
 ## ✨ **Benefits Achieved**

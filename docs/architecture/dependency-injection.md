@@ -14,43 +14,43 @@ The Easy Orders Backend now uses **Uber Fx** for dependency injection, providing
 
 ### **1. Configuration Layer**
 
-```go
+```text
 // internal/fx/modules.go - ConfigModule
 Config → All Components
 ```
 
 ### **2. Infrastructure Layer**
 
-```go
+```text
 // internal/fx/modules.go - LoggerModule, DatabaseModule
 Config → Logger → Database
 ```
 
 ### **3. Repository Layer**
 
-```go
+```text
 // internal/fx/repositories.go - RepositoriesModule
 Database + Logger → Repositories (Interface-based)
 ```
 
 ### **4. Service Layer**
 
-```go
+```text
 // internal/fx/services.go - ServicesModule
 Repositories + Logger → Services (Interface-based)
 ```
 
 ### **5. Handler Layer**
 
-```go
+```text
 // internal/fx/handlers.go - HandlersModule
 Services + Logger → HTTP Handlers
 ```
 
 ### **6. Server Layer**
 
-```go
-// internal/fx/server.go - ServerModule
+```text
+// internal/fx/servers.go - ServerModule
 Config + Logger + Handlers → HTTP Server
 ```
 
@@ -76,7 +76,7 @@ graph TD
 
 ### **Core Modules** (`fx.CoreModules`)
 
-```go
+```text
 // Essential infrastructure components
 fx.Options(
     ConfigModule,    // Environment configuration
@@ -87,7 +87,7 @@ fx.Options(
 
 ### **Application Modules** (`fx.ApplicationModules`)
 
-```go
+```text
 // Business logic components
 fx.Options(
     RepositoriesModule,  // Data access layer
@@ -98,7 +98,7 @@ fx.Options(
 
 ### **Server Module** (`fx.ServerModule`)
 
-```go
+```text
 // HTTP server with Gin
 fx.Module("server",
     fx.Provide(NewGinEngine),
@@ -111,7 +111,7 @@ fx.Module("server",
 
 ### **Repository Interfaces**
 
-```go
+```text
 // internal/repository/interfaces.go
 type UserRepository interface {
     Create(ctx context.Context, user *User) error
@@ -122,7 +122,7 @@ type UserRepository interface {
 
 ### **Service Interfaces**
 
-```go
+```text
 // internal/services/interfaces.go
 type UserService interface {
     CreateUser(ctx context.Context, req CreateUserRequest) (*UserResponse, error)
@@ -133,7 +133,7 @@ type UserService interface {
 
 ### **Implementation Registration**
 
-```go
+```text
 // Fx automatically wires interfaces to implementations
 fx.Annotate(
     repository.NewUserRepository,
@@ -149,7 +149,7 @@ fx.Annotate(
 
 ### **Database Connection**
 
-```go
+```text
 // Automatic startup/shutdown
 fx.Invoke(func(lc fx.Lifecycle, db *database.DB, logger *logger.Logger) {
     lc.Append(fx.Hook{
@@ -166,7 +166,7 @@ fx.Invoke(func(lc fx.Lifecycle, db *database.DB, logger *logger.Logger) {
 
 ### **HTTP Server**
 
-```go
+```text
 // Graceful server management
 lc.Append(fx.Hook{
     OnStart: func(ctx context.Context) error {
@@ -185,7 +185,7 @@ lc.Append(fx.Hook{
 
 ### **Easy Mocking**
 
-```go
+```text
 // Test setup with mocked dependencies
 func TestUserService(t *testing.T) {
     app := fx.New(
@@ -201,7 +201,7 @@ func TestUserService(t *testing.T) {
 
 ### **Integration Testing**
 
-```go
+```text
 // Full integration test with real dependencies
 func TestUserAPI(t *testing.T) {
     app := fx.New(
@@ -238,7 +238,7 @@ internal/
 
 ### **1. Create Interface**
 
-```go
+```text
 // internal/repository/interfaces.go or internal/services/interfaces.go
 type NewComponentInterface interface {
     DoSomething(ctx context.Context) error
@@ -247,7 +247,7 @@ type NewComponentInterface interface {
 
 ### **2. Create Implementation**
 
-```go
+```text
 // internal/repository/new_component.go
 func NewComponentRepository(deps...) NewComponentInterface {
     return &componentRepository{...}
@@ -256,7 +256,7 @@ func NewComponentRepository(deps...) NewComponentInterface {
 
 ### **3. Register with Fx**
 
-```go
+```text
 // internal/fx/repositories.go or internal/fx/services.go
 fx.Annotate(
     NewComponentRepository,
@@ -266,7 +266,7 @@ fx.Annotate(
 
 ### **4. Use in Dependent Components**
 
-```go
+```text
 // Constructor automatically receives the dependency
 func NewServiceThatNeedsComponent(comp NewComponentInterface) ServiceInterface {
     return &service{component: comp}

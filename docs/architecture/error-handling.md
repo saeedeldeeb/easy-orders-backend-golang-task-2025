@@ -43,7 +43,7 @@ The Easy Orders Backend now has a **comprehensive error handling system** with c
 
 #### **🏗️ Structured Error Architecture**
 
-```go
+```text
 type AppError struct {
     Type       ErrorType                  // Categorized error type
     Message    string                     // Human-readable message
@@ -57,7 +57,7 @@ type AppError struct {
 #### **🎯 Error Factory Methods**
 
 - **`NewValidationError()`** - Input validation failures
-- **`NewNotFoundError()`** - Resource not found with ID context
+- **`NewNotFoundError()`** - Resource isn't found with ID context
 - **`NewConflictError()`** - Resource conflicts (duplicates)
 - **`NewUnauthorizedError()`** - Authentication failures
 - **`NewForbiddenError()`** - Authorization failures
@@ -134,7 +134,7 @@ type AppError struct {
 
 ### **1. Middleware Stack Integration**
 
-```go
+```text
 // Error middleware integrated into Gin engine
 engine.Use(gin.Recovery())           // Panic recovery
 engine.Use(corsMiddleware.Handler()) // CORS handling
@@ -144,7 +144,7 @@ engine.Use(errorMiddleware.Handler()) // Centralized error handling
 
 ### **2. Handler Integration Example**
 
-```go
+```text
 // Before: Basic error handling
 if err != nil {
     c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed"})
@@ -163,7 +163,7 @@ if err != nil {
 
 Services can return structured errors that get properly handled:
 
-```go
+```text
 func (s *service) CreateUser(req CreateUserRequest) error {
     if existingUser != nil {
         return errors.NewDuplicateError("User", "email", req.Email)
@@ -226,7 +226,7 @@ func (s *service) CreateUser(req CreateUserRequest) error {
 
 ### **2. Centralized Error Processing**
 
-- **Single Error Middleware**: All errors processed consistently
+- **Single Error Middleware**: All errors are processed consistently
 - **Structured Logging**: Context-aware logging with appropriate levels
 - **User Context**: Authentication information preserved in error logs
 - **Response Standardization**: Consistent error response format

@@ -72,7 +72,7 @@
 
 ### **Route Protection Levels**
 
-```go
+```text
 // Public routes (no auth)
 v1.RegisterRoutes(userHandler)    // Registration, login
 
