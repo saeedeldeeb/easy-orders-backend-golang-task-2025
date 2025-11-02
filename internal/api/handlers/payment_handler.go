@@ -24,7 +24,21 @@ func NewPaymentHandler(paymentService services.PaymentService, logger *logger.Lo
 	}
 }
 
-// ProcessPayment handles POST /api/v1/payments
+// ProcessPayment godoc
+// @Summary Process a payment
+// @Description Process payment for an order
+// @Tags payments
+// @Accept json
+// @Produce json
+// @Param payment body services.ProcessPaymentRequest true "Payment details"
+// @Success 201 {object} map[string]interface{} "Payment processed successfully"
+// @Failure 400 {object} map[string]interface{} "Invalid request"
+// @Failure 404 {object} map[string]interface{} "Order not found"
+// @Failure 409 {object} map[string]interface{} "Order already paid"
+// @Failure 402 {object} map[string]interface{} "Payment processing failed"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Security BearerAuth
+// @Router /payments [post]
 func (h *PaymentHandler) ProcessPayment(c *gin.Context) {
 	h.logger.Debug("Processing payment via API")
 
@@ -85,7 +99,19 @@ func (h *PaymentHandler) ProcessPayment(c *gin.Context) {
 	})
 }
 
-// GetPayment handles GET /api/v1/payments/:id
+// GetPayment godoc
+// @Summary Get payment by ID
+// @Description Retrieve payment details by payment ID
+// @Tags payments
+// @Accept json
+// @Produce json
+// @Param id path string true "Payment ID"
+// @Success 200 {object} map[string]interface{} "Payment details"
+// @Failure 400 {object} map[string]interface{} "Invalid payment ID"
+// @Failure 404 {object} map[string]interface{} "Payment not found"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Security BearerAuth
+// @Router /payments/{id} [get]
 func (h *PaymentHandler) GetPayment(c *gin.Context) {
 	paymentID := c.Param("id")
 	h.logger.Debug("Getting payment via API", "id", paymentID)
@@ -121,7 +147,22 @@ func (h *PaymentHandler) GetPayment(c *gin.Context) {
 	})
 }
 
-// RefundPayment handles POST /api/v1/payments/:id/refund
+// RefundPayment godoc
+// @Summary Refund a payment
+// @Description Process a refund for a payment
+// @Tags payments
+// @Accept json
+// @Produce json
+// @Param id path string true "Payment ID"
+// @Param refund body object{amount=number} true "Refund amount"
+// @Success 201 {object} map[string]interface{} "Refund processed successfully"
+// @Failure 400 {object} map[string]interface{} "Invalid request"
+// @Failure 404 {object} map[string]interface{} "Payment not found"
+// @Failure 409 {object} map[string]interface{} "Payment cannot be refunded"
+// @Failure 402 {object} map[string]interface{} "Refund processing failed"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Security BearerAuth
+// @Router /payments/{id}/refund [post]
 func (h *PaymentHandler) RefundPayment(c *gin.Context) {
 	paymentID := c.Param("id")
 	h.logger.Debug("Processing refund via API", "payment_id", paymentID)
@@ -191,7 +232,18 @@ func (h *PaymentHandler) RefundPayment(c *gin.Context) {
 	})
 }
 
-// GetOrderPayments handles GET /api/v1/orders/:order_id/payments
+// GetOrderPayments godoc
+// @Summary Get order payments
+// @Description Get all payments for a specific order
+// @Tags payments
+// @Accept json
+// @Produce json
+// @Param order_id path string true "Order ID"
+// @Success 200 {object} map[string]interface{} "Order payments"
+// @Failure 400 {object} map[string]interface{} "Invalid order ID"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Security BearerAuth
+// @Router /orders/{order_id}/payments [get]
 func (h *PaymentHandler) GetOrderPayments(c *gin.Context) {
 	orderID := c.Param("order_id")
 	h.logger.Debug("Getting order payments via API", "order_id", orderID)

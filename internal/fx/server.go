@@ -12,7 +12,11 @@ import (
 	"easy-orders-backend/internal/middleware"
 	"easy-orders-backend/pkg/logger"
 
+	_ "easy-orders-backend/docs" // Import generated Swagger docs
+
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 	"go.uber.org/fx"
 )
 
@@ -75,6 +79,9 @@ func NewGinEngine(
 			"service":   "easy-orders-backend",
 		})
 	})
+
+	// Swagger documentation endpoint
+	engine.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// API v1 group
 	v1 := engine.Group("/api/v1")

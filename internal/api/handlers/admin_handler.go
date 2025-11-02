@@ -32,7 +32,19 @@ func NewAdminHandler(
 	}
 }
 
-// GetAllOrders handles GET /api/v1/admin/orders
+// GetAllOrders godoc
+// @Summary Get all orders (Admin)
+// @Description Get a paginated list of all orders (Admin only)
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Param offset query int false "Offset for pagination" default(0)
+// @Param limit query int false "Limit for pagination" default(10)
+// @Param status query string false "Filter by order status"
+// @Success 200 {object} map[string]interface{} "List of all orders"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Security BearerAuth
+// @Router /admin/orders [get]
 func (h *AdminHandler) GetAllOrders(c *gin.Context) {
 	h.logger.Debug("Getting all orders via admin API")
 
@@ -74,7 +86,21 @@ func (h *AdminHandler) GetAllOrders(c *gin.Context) {
 	})
 }
 
-// UpdateOrderStatus handles PATCH /api/v1/admin/orders/:id/status
+// UpdateOrderStatus godoc
+// @Summary Update order status (Admin)
+// @Description Update order status as admin
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Param id path string true "Order ID"
+// @Param status body object{status=string} true "New order status"
+// @Success 200 {object} map[string]interface{} "Order status updated"
+// @Failure 400 {object} map[string]interface{} "Invalid request"
+// @Failure 404 {object} map[string]interface{} "Order not found"
+// @Failure 409 {object} map[string]interface{} "Invalid status transition"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Security BearerAuth
+// @Router /admin/orders/{id}/status [patch]
 func (h *AdminHandler) UpdateOrderStatus(c *gin.Context) {
 	orderID := c.Param("id")
 	h.logger.Debug("Updating order status via admin API", "id", orderID)
@@ -130,7 +156,18 @@ func (h *AdminHandler) UpdateOrderStatus(c *gin.Context) {
 	})
 }
 
-// GenerateDailySalesReport handles GET /api/v1/admin/reports/sales/daily
+// GenerateDailySalesReport godoc
+// @Summary Generate daily sales report (Admin)
+// @Description Generate sales report for a specific date
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Param date query string false "Date in YYYY-MM-DD format"
+// @Success 200 {object} map[string]interface{} "Daily sales report"
+// @Failure 400 {object} map[string]interface{} "Invalid date format"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Security BearerAuth
+// @Router /admin/reports/sales/daily [get]
 func (h *AdminHandler) GenerateDailySalesReport(c *gin.Context) {
 	h.logger.Debug("Generating daily sales report via admin API")
 
@@ -160,7 +197,16 @@ func (h *AdminHandler) GenerateDailySalesReport(c *gin.Context) {
 	})
 }
 
-// GenerateInventoryReport handles GET /api/v1/admin/reports/inventory
+// GenerateInventoryReport godoc
+// @Summary Generate inventory report (Admin)
+// @Description Generate current inventory status report
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Success 200 {object} map[string]interface{} "Inventory report"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Security BearerAuth
+// @Router /admin/reports/inventory [get]
 func (h *AdminHandler) GenerateInventoryReport(c *gin.Context) {
 	h.logger.Debug("Generating inventory report via admin API")
 
@@ -180,7 +226,17 @@ func (h *AdminHandler) GenerateInventoryReport(c *gin.Context) {
 	})
 }
 
-// GenerateTopProductsReport handles GET /api/v1/admin/reports/products/top
+// GenerateTopProductsReport godoc
+// @Summary Generate top products report (Admin)
+// @Description Generate report of top selling products
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Param limit query int false "Number of top products" default(10)
+// @Success 200 {object} map[string]interface{} "Top products report"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Security BearerAuth
+// @Router /admin/reports/products/top [get]
 func (h *AdminHandler) GenerateTopProductsReport(c *gin.Context) {
 	h.logger.Debug("Generating top products report via admin API")
 
@@ -215,7 +271,18 @@ func (h *AdminHandler) GenerateTopProductsReport(c *gin.Context) {
 	})
 }
 
-// GenerateUserActivityReport handles GET /api/v1/admin/reports/users/activity
+// GenerateUserActivityReport godoc
+// @Summary Generate user activity report (Admin)
+// @Description Generate user activity report for a date range
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Param start_date query string false "Start date in YYYY-MM-DD format"
+// @Param end_date query string false "End date in YYYY-MM-DD format"
+// @Success 200 {object} map[string]interface{} "User activity report"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Security BearerAuth
+// @Router /admin/reports/users/activity [get]
 func (h *AdminHandler) GenerateUserActivityReport(c *gin.Context) {
 	h.logger.Debug("Generating user activity report via admin API")
 

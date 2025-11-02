@@ -25,7 +25,19 @@ func NewProductHandler(productService services.ProductService, logger *logger.Lo
 	}
 }
 
-// CreateProduct handles POST /api/v1/products
+// CreateProduct godoc
+// @Summary Create a new product
+// @Description Create a new product (Admin only)
+// @Tags products
+// @Accept json
+// @Produce json
+// @Param product body services.CreateProductRequest true "Product details"
+// @Success 201 {object} map[string]interface{} "Product created successfully"
+// @Failure 400 {object} map[string]interface{} "Invalid request"
+// @Failure 409 {object} map[string]interface{} "Product already exists"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Security BearerAuth
+// @Router /products [post]
 func (h *ProductHandler) CreateProduct(c *gin.Context) {
 	h.logger.Debug("Creating product via API")
 
@@ -72,7 +84,19 @@ func (h *ProductHandler) CreateProduct(c *gin.Context) {
 	})
 }
 
-// GetProduct handles GET /api/v1/products/:id
+// GetProduct godoc
+// @Summary Get product by ID
+// @Description Retrieve product details by product ID
+// @Tags products
+// @Accept json
+// @Produce json
+// @Param id path string true "Product ID"
+// @Success 200 {object} map[string]interface{} "Product details"
+// @Failure 400 {object} map[string]interface{} "Invalid product ID"
+// @Failure 404 {object} map[string]interface{} "Product not found"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Security BearerAuth
+// @Router /products/{id} [get]
 func (h *ProductHandler) GetProduct(c *gin.Context) {
 	productID := c.Param("id")
 	h.logger.Debug("Getting product via API", "id", productID)
@@ -108,7 +132,20 @@ func (h *ProductHandler) GetProduct(c *gin.Context) {
 	})
 }
 
-// UpdateProduct handles PUT /api/v1/products/:id
+// UpdateProduct godoc
+// @Summary Update product
+// @Description Update product details (Admin only)
+// @Tags products
+// @Accept json
+// @Produce json
+// @Param id path string true "Product ID"
+// @Param product body services.UpdateProductRequest true "Updated product details"
+// @Success 200 {object} map[string]interface{} "Product updated successfully"
+// @Failure 400 {object} map[string]interface{} "Invalid request"
+// @Failure 404 {object} map[string]interface{} "Product not found"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Security BearerAuth
+// @Router /products/{id} [put]
 func (h *ProductHandler) UpdateProduct(c *gin.Context) {
 	productID := c.Param("id")
 	h.logger.Debug("Updating product via API", "id", productID)
@@ -155,7 +192,19 @@ func (h *ProductHandler) UpdateProduct(c *gin.Context) {
 	})
 }
 
-// DeleteProduct handles DELETE /api/v1/products/:id
+// DeleteProduct godoc
+// @Summary Delete product
+// @Description Delete a product (Admin only)
+// @Tags products
+// @Accept json
+// @Produce json
+// @Param id path string true "Product ID"
+// @Success 200 {object} map[string]interface{} "Product deleted successfully"
+// @Failure 400 {object} map[string]interface{} "Invalid product ID"
+// @Failure 404 {object} map[string]interface{} "Product not found"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Security BearerAuth
+// @Router /products/{id} [delete]
 func (h *ProductHandler) DeleteProduct(c *gin.Context) {
 	productID := c.Param("id")
 	h.logger.Debug("Deleting product via API", "id", productID)
@@ -191,7 +240,20 @@ func (h *ProductHandler) DeleteProduct(c *gin.Context) {
 	})
 }
 
-// ListProducts handles GET /api/v1/products
+// ListProducts godoc
+// @Summary List products
+// @Description Get a paginated list of products with optional filters
+// @Tags products
+// @Accept json
+// @Produce json
+// @Param offset query int false "Offset for pagination" default(0)
+// @Param limit query int false "Limit for pagination" default(10)
+// @Param category_id query string false "Filter by category ID"
+// @Param active_only query boolean false "Show only active products" default(false)
+// @Success 200 {object} map[string]interface{} "List of products"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Security BearerAuth
+// @Router /products [get]
 func (h *ProductHandler) ListProducts(c *gin.Context) {
 	h.logger.Debug("Listing products via API")
 
@@ -238,7 +300,20 @@ func (h *ProductHandler) ListProducts(c *gin.Context) {
 	})
 }
 
-// SearchProducts handles GET /api/v1/products/search
+// SearchProducts godoc
+// @Summary Search products
+// @Description Search products by name or description
+// @Tags products
+// @Accept json
+// @Produce json
+// @Param q query string true "Search query"
+// @Param offset query int false "Offset for pagination" default(0)
+// @Param limit query int false "Limit for pagination" default(10)
+// @Success 200 {object} map[string]interface{} "Search results"
+// @Failure 400 {object} map[string]interface{} "Search query is required"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Security BearerAuth
+// @Router /products/search [get]
 func (h *ProductHandler) SearchProducts(c *gin.Context) {
 	h.logger.Debug("Searching products via API")
 

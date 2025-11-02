@@ -26,7 +26,20 @@ func NewOrderHandler(orderService services.OrderService, logger *logger.Logger) 
 	}
 }
 
-// CreateOrder handles POST /api/v1/orders
+// CreateOrder godoc
+// @Summary Create a new order
+// @Description Create a new order with items
+// @Tags orders
+// @Accept json
+// @Produce json
+// @Param order body services.CreateOrderRequest true "Order details"
+// @Success 201 {object} map[string]interface{} "Order created successfully"
+// @Failure 400 {object} map[string]interface{} "Invalid request"
+// @Failure 404 {object} map[string]interface{} "User or product not found"
+// @Failure 409 {object} map[string]interface{} "Insufficient stock"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Security BearerAuth
+// @Router /orders [post]
 func (h *OrderHandler) CreateOrder(c *gin.Context) {
 	h.logger.Debug("Creating order via API")
 
@@ -90,7 +103,19 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 	})
 }
 
-// GetOrder handles GET /api/v1/orders/:id
+// GetOrder godoc
+// @Summary Get order by ID
+// @Description Retrieve order details by order ID
+// @Tags orders
+// @Accept json
+// @Produce json
+// @Param id path string true "Order ID"
+// @Success 200 {object} map[string]interface{} "Order details"
+// @Failure 400 {object} map[string]interface{} "Invalid order ID"
+// @Failure 404 {object} map[string]interface{} "Order not found"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Security BearerAuth
+// @Router /orders/{id} [get]
 func (h *OrderHandler) GetOrder(c *gin.Context) {
 	orderID := c.Param("id")
 	h.logger.Debug("Getting order via API", "id", orderID)
@@ -126,7 +151,21 @@ func (h *OrderHandler) GetOrder(c *gin.Context) {
 	})
 }
 
-// UpdateOrderStatus handles PATCH /api/v1/orders/:id/status
+// UpdateOrderStatus godoc
+// @Summary Update order status
+// @Description Update the status of an existing order
+// @Tags orders
+// @Accept json
+// @Produce json
+// @Param id path string true "Order ID"
+// @Param status body object{status=string} true "New order status"
+// @Success 200 {object} map[string]interface{} "Order status updated"
+// @Failure 400 {object} map[string]interface{} "Invalid request"
+// @Failure 404 {object} map[string]interface{} "Order not found"
+// @Failure 409 {object} map[string]interface{} "Invalid status transition"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Security BearerAuth
+// @Router /orders/{id}/status [patch]
 func (h *OrderHandler) UpdateOrderStatus(c *gin.Context) {
 	orderID := c.Param("id")
 	h.logger.Debug("Updating order status via API", "id", orderID)
@@ -208,7 +247,20 @@ func (h *OrderHandler) UpdateOrderStatus(c *gin.Context) {
 	})
 }
 
-// CancelOrder handles PATCH /api/v1/orders/:id/cancel
+// CancelOrder godoc
+// @Summary Cancel order
+// @Description Cancel an existing order
+// @Tags orders
+// @Accept json
+// @Produce json
+// @Param id path string true "Order ID"
+// @Success 200 {object} map[string]interface{} "Order cancelled successfully"
+// @Failure 400 {object} map[string]interface{} "Invalid order ID"
+// @Failure 404 {object} map[string]interface{} "Order not found"
+// @Failure 409 {object} map[string]interface{} "Order cannot be cancelled"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Security BearerAuth
+// @Router /orders/{id}/cancel [patch]
 func (h *OrderHandler) CancelOrder(c *gin.Context) {
 	orderID := c.Param("id")
 	h.logger.Debug("Cancelling order via API", "id", orderID)
@@ -251,7 +303,19 @@ func (h *OrderHandler) CancelOrder(c *gin.Context) {
 	})
 }
 
-// ListOrders handles GET /api/v1/orders
+// ListOrders godoc
+// @Summary List orders
+// @Description Get a paginated list of orders with optional status filter
+// @Tags orders
+// @Accept json
+// @Produce json
+// @Param offset query int false "Offset for pagination" default(0)
+// @Param limit query int false "Limit for pagination" default(10)
+// @Param status query string false "Filter by order status"
+// @Success 200 {object} map[string]interface{} "List of orders"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Security BearerAuth
+// @Router /orders [get]
 func (h *OrderHandler) ListOrders(c *gin.Context) {
 	h.logger.Debug("Listing orders via API")
 
@@ -293,7 +357,22 @@ func (h *OrderHandler) ListOrders(c *gin.Context) {
 	})
 }
 
-// GetUserOrders handles GET /api/v1/users/:user_id/orders
+// GetUserOrders godoc
+// @Summary Get user orders
+// @Description Get all orders for a specific user
+// @Tags orders
+// @Accept json
+// @Produce json
+// @Param user_id path string true "User ID"
+// @Param offset query int false "Offset for pagination" default(0)
+// @Param limit query int false "Limit for pagination" default(10)
+// @Param status query string false "Filter by order status"
+// @Success 200 {object} map[string]interface{} "User orders"
+// @Failure 400 {object} map[string]interface{} "Invalid user ID"
+// @Failure 404 {object} map[string]interface{} "User not found"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Security BearerAuth
+// @Router /users/{user_id}/orders [get]
 func (h *OrderHandler) GetUserOrders(c *gin.Context) {
 	userID := c.Param("user_id")
 	h.logger.Debug("Getting user orders via API", "user_id", userID)

@@ -27,7 +27,18 @@ func NewUserHandler(userService services.UserService, logger *logger.Logger) *Us
 	}
 }
 
-// CreateUser handles POST /api/v1/users
+// CreateUser godoc
+// @Summary Create a new user
+// @Description Register a new user account
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param user body services.CreateUserRequest true "User registration details"
+// @Success 201 {object} models.User "User created successfully"
+// @Failure 400 {object} map[string]interface{} "Invalid request body or validation error"
+// @Failure 409 {object} map[string]interface{} "User already exists"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /users [post]
 func (h *UserHandler) CreateUser(c *gin.Context) {
 	var req services.CreateUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -62,7 +73,19 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 	c.JSON(http.StatusCreated, user)
 }
 
-// GetUser handles GET /api/v1/users/:id
+// GetUser godoc
+// @Summary Get user by ID
+// @Description Retrieve user details by user ID
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param id path string true "User ID"
+// @Success 200 {object} models.User "User details"
+// @Failure 400 {object} map[string]interface{} "Invalid user ID"
+// @Failure 404 {object} map[string]interface{} "User not found"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Security BearerAuth
+// @Router /users/{id} [get]
 func (h *UserHandler) GetUser(c *gin.Context) {
 	id := c.Param("id")
 	if id == "" {
@@ -88,7 +111,19 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 	c.JSON(http.StatusOK, user)
 }
 
-// UpdateUser handles PUT /api/v1/users/:id
+// UpdateUser godoc
+// @Summary Update user
+// @Description Update user profile information
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param id path string true "User ID"
+// @Param user body services.UpdateUserRequest true "Updated user details"
+// @Success 200 {object} models.User "User updated successfully"
+// @Failure 400 {object} map[string]interface{} "Invalid request"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Security BearerAuth
+// @Router /users/{id} [put]
 func (h *UserHandler) UpdateUser(c *gin.Context) {
 	id := c.Param("id")
 	if id == "" {
@@ -113,7 +148,18 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 	c.JSON(http.StatusOK, user)
 }
 
-// DeleteUser handles DELETE /api/v1/users/:id
+// DeleteUser godoc
+// @Summary Delete user
+// @Description Delete a user account
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param id path string true "User ID"
+// @Success 204 "User deleted successfully"
+// @Failure 400 {object} map[string]interface{} "Invalid user ID"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Security BearerAuth
+// @Router /users/{id} [delete]
 func (h *UserHandler) DeleteUser(c *gin.Context) {
 	id := c.Param("id")
 	if id == "" {
@@ -131,7 +177,18 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 	c.JSON(http.StatusNoContent, nil)
 }
 
-// ListUsers handles GET /api/v1/users
+// ListUsers godoc
+// @Summary List users
+// @Description Get a paginated list of users
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param offset query int false "Offset for pagination" default(0)
+// @Param limit query int false "Limit for pagination" default(10)
+// @Success 200 {object} services.ListUsersResponse "List of users"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Security BearerAuth
+// @Router /users [get]
 func (h *UserHandler) ListUsers(c *gin.Context) {
 	// Parse query parameters for pagination
 	var req services.ListUsersRequest
@@ -160,7 +217,17 @@ func (h *UserHandler) ListUsers(c *gin.Context) {
 	c.JSON(http.StatusOK, users)
 }
 
-// AuthenticateUser handles POST /api/v1/auth/login
+// AuthenticateUser godoc
+// @Summary Login user
+// @Description Authenticate user and get JWT token
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param credentials body object{email=string,password=string} true "Login credentials"
+// @Success 200 {object} object{token=string,user=models.User} "Authentication successful"
+// @Failure 400 {object} map[string]interface{} "Invalid request body"
+// @Failure 401 {object} map[string]interface{} "Invalid credentials"
+// @Router /auth/login [post]
 func (h *UserHandler) AuthenticateUser(c *gin.Context) {
 	var req struct {
 		Email    string `json:"email" binding:"required,email"`

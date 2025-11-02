@@ -25,7 +25,19 @@ func NewInventoryHandler(inventoryService services.InventoryService, logger *log
 	}
 }
 
-// CheckAvailability handles GET /api/v1/products/:id/inventory
+// CheckAvailability godoc
+// @Summary Check inventory availability
+// @Description Check if a specific quantity of a product is available
+// @Tags inventory
+// @Accept json
+// @Produce json
+// @Param id path string true "Product ID"
+// @Param quantity query int true "Quantity to check"
+// @Success 200 {object} map[string]interface{} "Availability status"
+// @Failure 400 {object} map[string]interface{} "Invalid request"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Security BearerAuth
+// @Router /products/{id}/inventory [get]
 func (h *InventoryHandler) CheckAvailability(c *gin.Context) {
 	productID := c.Param("id")
 	h.logger.Debug("Checking inventory availability via API", "product_id", productID)
@@ -81,7 +93,19 @@ func (h *InventoryHandler) CheckAvailability(c *gin.Context) {
 	})
 }
 
-// ReserveInventory handles POST /api/v1/inventory/reserve
+// ReserveInventory godoc
+// @Summary Reserve inventory
+// @Description Reserve inventory items for an order
+// @Tags inventory
+// @Accept json
+// @Produce json
+// @Param items body object{items=[]services.InventoryItem} true "Items to reserve"
+// @Success 200 {object} map[string]interface{} "Inventory reserved successfully"
+// @Failure 400 {object} map[string]interface{} "Invalid request"
+// @Failure 409 {object} map[string]interface{} "Insufficient stock"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Security BearerAuth
+// @Router /inventory/reserve [post]
 func (h *InventoryHandler) ReserveInventory(c *gin.Context) {
 	h.logger.Debug("Reserving inventory via API")
 
@@ -128,7 +152,18 @@ func (h *InventoryHandler) ReserveInventory(c *gin.Context) {
 	})
 }
 
-// ReleaseInventory handles POST /api/v1/inventory/release
+// ReleaseInventory godoc
+// @Summary Release inventory
+// @Description Release previously reserved inventory items
+// @Tags inventory
+// @Accept json
+// @Produce json
+// @Param items body object{items=[]services.InventoryItem} true "Items to release"
+// @Success 200 {object} map[string]interface{} "Inventory released successfully"
+// @Failure 400 {object} map[string]interface{} "Invalid request"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Security BearerAuth
+// @Router /inventory/release [post]
 func (h *InventoryHandler) ReleaseInventory(c *gin.Context) {
 	h.logger.Debug("Releasing inventory via API")
 
@@ -168,7 +203,20 @@ func (h *InventoryHandler) ReleaseInventory(c *gin.Context) {
 	})
 }
 
-// UpdateStock handles PUT /api/v1/inventory/:product_id
+// UpdateStock godoc
+// @Summary Update stock (Admin)
+// @Description Update product stock quantity (Admin only)
+// @Tags inventory
+// @Accept json
+// @Produce json
+// @Param product_id path string true "Product ID"
+// @Param stock body object{quantity=int} true "New stock quantity"
+// @Success 200 {object} map[string]interface{} "Stock updated successfully"
+// @Failure 400 {object} map[string]interface{} "Invalid request"
+// @Failure 404 {object} map[string]interface{} "Product not found"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Security BearerAuth
+// @Router /inventory/{product_id} [put]
 func (h *InventoryHandler) UpdateStock(c *gin.Context) {
 	productID := c.Param("product_id")
 	h.logger.Debug("Updating stock via API", "product_id", productID)
@@ -223,7 +271,17 @@ func (h *InventoryHandler) UpdateStock(c *gin.Context) {
 	})
 }
 
-// GetLowStockAlert handles GET /api/v1/inventory/low-stock
+// GetLowStockAlert godoc
+// @Summary Get low stock alerts (Admin)
+// @Description Get products with low stock levels (Admin only)
+// @Tags inventory
+// @Accept json
+// @Produce json
+// @Param threshold query int false "Stock threshold" default(10)
+// @Success 200 {object} map[string]interface{} "Low stock products"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Security BearerAuth
+// @Router /inventory/low-stock [get]
 func (h *InventoryHandler) GetLowStockAlert(c *gin.Context) {
 	h.logger.Debug("Getting low stock alert via API")
 
