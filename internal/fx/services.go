@@ -56,8 +56,5 @@ var ServicesModule = fx.Module("services",
 			services.NewOrderPipelineService,
 			fx.As(new(services.OrderPipelineService)),
 		),
-
-		// Enhanced Report service
-		services.NewEnhancedReportService,
 	),
 )

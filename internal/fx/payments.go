@@ -14,21 +14,8 @@ import (
 // PaymentsModule provides enhanced payment processing dependencies
 var PaymentsModule = fx.Module("payments",
 	fx.Provide(
-		// Payment gateway manager and gateways
+		// Payment gateway manager
 		payments.NewPaymentGatewayManager,
-		func(gatewayManager *payments.PaymentGatewayManager, logger *logger.Logger) *payments.PaymentGatewayManager {
-			// Register mock gateways for testing
-			mockStripe := payments.NewMockPaymentGateway(payments.GatewayTypeStripe, 0.05, 500*time.Millisecond, logger)
-			mockPayPal := payments.NewMockPaymentGateway(payments.GatewayTypePayPal, 0.03, 300*time.Millisecond, logger)
-			mockSquare := payments.NewMockPaymentGateway(payments.GatewayTypeSquare, 0.04, 400*time.Millisecond, logger)
-
-			gatewayManager.RegisterGateway(mockStripe)
-			gatewayManager.RegisterGateway(mockPayPal)
-			gatewayManager.RegisterGateway(mockSquare)
-
-			logger.Info("Payment gateways registered", "count", 3)
-			return gatewayManager
-		},
 
 		// Idempotency manager
 		func(logger *logger.Logger) *payments.IdempotencyManager {
@@ -41,6 +28,21 @@ var PaymentsModule = fx.Module("payments",
 		// Enhanced payment service
 		services.NewEnhancedPaymentService,
 	),
+
+	// Decorate the gateway manager to register mock gateways
+	fx.Decorate(func(gatewayManager *payments.PaymentGatewayManager, logger *logger.Logger) *payments.PaymentGatewayManager {
+		// Register mock gateways for testing
+		mockStripe := payments.NewMockPaymentGateway(payments.GatewayTypeStripe, 0.05, 500*time.Millisecond, logger)
+		mockPayPal := payments.NewMockPaymentGateway(payments.GatewayTypePayPal, 0.03, 300*time.Millisecond, logger)
+		mockSquare := payments.NewMockPaymentGateway(payments.GatewayTypeSquare, 0.04, 400*time.Millisecond, logger)
+
+		gatewayManager.RegisterGateway(mockStripe)
+		gatewayManager.RegisterGateway(mockPayPal)
+		gatewayManager.RegisterGateway(mockSquare)
+
+		logger.Info("Payment gateways registered", "count", 3)
+		return gatewayManager
+	}),
 
 	// Lifecycle hooks
 	fx.Invoke(func(lc fx.Lifecycle, idempotencyManager *payments.IdempotencyManager, logger *logger.Logger) {
