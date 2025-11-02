@@ -78,38 +78,108 @@ func CreateIndexes(db *gorm.DB) error {
 // CreateConstraints creates additional database constraints
 func CreateConstraints(db *gorm.DB) error {
 	// Ensure inventory quantities are non-negative
-	if err := db.Exec("ALTER TABLE inventory ADD CONSTRAINT chk_inventory_quantities CHECK (quantity >= 0 AND reserved >= 0 AND available >= 0)").Error; err != nil {
-		// Constraint might already exist, ignore error
+	if err := db.Exec(`
+		DO $$
+		BEGIN
+			IF NOT EXISTS (
+				SELECT 1 FROM pg_constraint WHERE conname = 'chk_inventory_quantities'
+			) THEN
+				ALTER TABLE inventory ADD CONSTRAINT chk_inventory_quantities
+				CHECK (quantity >= 0 AND reserved >= 0 AND available >= 0);
+			END IF;
+		END $$;
+	`).Error; err != nil {
+		return err
 	}
 
 	// Ensure reserved quantity doesn't exceed total quantity
-	if err := db.Exec("ALTER TABLE inventory ADD CONSTRAINT chk_inventory_reserved CHECK (reserved <= quantity)").Error; err != nil {
-		// Constraint might already exist, ignore error
+	if err := db.Exec(`
+		DO $$
+		BEGIN
+			IF NOT EXISTS (
+				SELECT 1 FROM pg_constraint WHERE conname = 'chk_inventory_reserved'
+			) THEN
+				ALTER TABLE inventory ADD CONSTRAINT chk_inventory_reserved
+				CHECK (reserved <= quantity);
+			END IF;
+		END $$;
+	`).Error; err != nil {
+		return err
 	}
 
 	// Ensure available quantity is calculated correctly
-	if err := db.Exec("ALTER TABLE inventory ADD CONSTRAINT chk_inventory_available CHECK (available = quantity - reserved)").Error; err != nil {
-		// Constraint might already exist, ignore error
+	if err := db.Exec(`
+		DO $$
+		BEGIN
+			IF NOT EXISTS (
+				SELECT 1 FROM pg_constraint WHERE conname = 'chk_inventory_available'
+			) THEN
+				ALTER TABLE inventory ADD CONSTRAINT chk_inventory_available
+				CHECK (available = quantity - reserved);
+			END IF;
+		END $$;
+	`).Error; err != nil {
+		return err
 	}
 
 	// Ensure order item quantities are positive
-	if err := db.Exec("ALTER TABLE order_items ADD CONSTRAINT chk_order_items_quantity CHECK (quantity > 0)").Error; err != nil {
-		// Constraint might already exist, ignore error
+	if err := db.Exec(`
+		DO $$
+		BEGIN
+			IF NOT EXISTS (
+				SELECT 1 FROM pg_constraint WHERE conname = 'chk_order_items_quantity'
+			) THEN
+				ALTER TABLE order_items ADD CONSTRAINT chk_order_items_quantity
+				CHECK (quantity > 0);
+			END IF;
+		END $$;
+	`).Error; err != nil {
+		return err
 	}
 
 	// Ensure order item prices are non-negative
-	if err := db.Exec("ALTER TABLE order_items ADD CONSTRAINT chk_order_items_prices CHECK (unit_price >= 0 AND total_price >= 0)").Error; err != nil {
-		// Constraint might already exist, ignore error
+	if err := db.Exec(`
+		DO $$
+		BEGIN
+			IF NOT EXISTS (
+				SELECT 1 FROM pg_constraint WHERE conname = 'chk_order_items_prices'
+			) THEN
+				ALTER TABLE order_items ADD CONSTRAINT chk_order_items_prices
+				CHECK (unit_price >= 0 AND total_price >= 0);
+			END IF;
+		END $$;
+	`).Error; err != nil {
+		return err
 	}
 
 	// Ensure payment amounts are positive
-	if err := db.Exec("ALTER TABLE payments ADD CONSTRAINT chk_payments_amount CHECK (amount > 0)").Error; err != nil {
-		// Constraint might already exist, ignore error
+	if err := db.Exec(`
+		DO $$
+		BEGIN
+			IF NOT EXISTS (
+				SELECT 1 FROM pg_constraint WHERE conname = 'chk_payments_amount'
+			) THEN
+				ALTER TABLE payments ADD CONSTRAINT chk_payments_amount
+				CHECK (amount > 0);
+			END IF;
+		END $$;
+	`).Error; err != nil {
+		return err
 	}
 
 	// Ensure order total amounts are non-negative
-	if err := db.Exec("ALTER TABLE orders ADD CONSTRAINT chk_orders_total CHECK (total_amount >= 0)").Error; err != nil {
-		// Constraint might already exist, ignore error
+	if err := db.Exec(`
+		DO $$
+		BEGIN
+			IF NOT EXISTS (
+				SELECT 1 FROM pg_constraint WHERE conname = 'chk_orders_total'
+			) THEN
+				ALTER TABLE orders ADD CONSTRAINT chk_orders_total
+				CHECK (total_amount >= 0);
+			END IF;
+		END $$;
+	`).Error; err != nil {
+		return err
 	}
 
 	return nil

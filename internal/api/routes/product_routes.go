@@ -18,7 +18,6 @@ func RegisterProductRoutes(router *gin.RouterGroup, productHandler *handlers.Pro
 		products.DELETE("/:id", productHandler.DeleteProduct)
 
 		// Inventory check endpoint (as per README requirement)
-		// Note: Handler expects "product_id" param, will need to update handler to use "id"
-		products.GET("/:product_id/inventory", inventoryHandler.CheckAvailability)
+		products.GET("/:id/inventory", inventoryHandler.CheckAvailability)
 	}
 }

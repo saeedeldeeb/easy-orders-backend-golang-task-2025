@@ -25,9 +25,9 @@ func NewInventoryHandler(inventoryService services.InventoryService, logger *log
 	}
 }
 
-// CheckAvailability handles GET /api/v1/inventory/check/:product_id
+// CheckAvailability handles GET /api/v1/products/:id/inventory
 func (h *InventoryHandler) CheckAvailability(c *gin.Context) {
-	productID := c.Param("product_id")
+	productID := c.Param("id")
 	h.logger.Debug("Checking inventory availability via API", "product_id", productID)
 
 	if productID == "" {
