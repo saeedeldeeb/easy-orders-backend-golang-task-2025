@@ -6,6 +6,7 @@ import (
 
 	"easy-orders-backend/internal/models"
 	"easy-orders-backend/internal/repository"
+	"easy-orders-backend/pkg/jwt"
 	"easy-orders-backend/pkg/logger"
 
 	"golang.org/x/crypto/bcrypt"
@@ -13,15 +14,17 @@ import (
 
 // userService implements UserService interface
 type userService struct {
-	userRepo repository.UserRepository
-	logger   *logger.Logger
+	userRepo     repository.UserRepository
+	tokenManager *jwt.TokenManager
+	logger       *logger.Logger
 }
 
 // NewUserService creates a new user service
-func NewUserService(userRepo repository.UserRepository, logger *logger.Logger) UserService {
+func NewUserService(userRepo repository.UserRepository, tokenManager *jwt.TokenManager, logger *logger.Logger) UserService {
 	return &userService{
-		userRepo: userRepo,
-		logger:   logger,
+		userRepo:     userRepo,
+		tokenManager: tokenManager,
+		logger:       logger,
 	}
 }
 
@@ -39,7 +42,7 @@ func (s *userService) CreateUser(ctx context.Context, req CreateUserRequest) (*U
 		return nil, errors.New("password is required")
 	}
 
-	// Check if user already exists
+	// Check if a user already exists
 	existingUser, err := s.userRepo.GetByEmail(ctx, req.Email)
 	if err != nil {
 		s.logger.Error("Failed to check existing user", "error", err, "email", req.Email)
@@ -209,10 +212,17 @@ func (s *userService) AuthenticateUser(ctx context.Context, email, password stri
 		return nil, errors.New("invalid credentials")
 	}
 
-	// TODO: This will be updated to use actual JWT token manager once middleware is integrated
-	// For now, return a predictable token format for testing
+	// Generate JWT token
+	token, err := s.tokenManager.GenerateToken(user)
+	if err != nil {
+		s.logger.Error("Failed to generate JWT token", "error", err, "user_id", user.ID)
+		return nil, errors.New("failed to generate authentication token")
+	}
+
+	s.logger.Info("User authenticated successfully", "user_id", user.ID, "email", user.Email)
+
 	return &AuthResponse{
-		Token: "jwt-token-" + user.ID,
+		Token: token,
 		User: UserResponse{
 			ID:       user.ID,
 			Email:    user.Email,
