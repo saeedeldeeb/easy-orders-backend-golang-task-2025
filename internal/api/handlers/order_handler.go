@@ -151,24 +151,22 @@ func (h *OrderHandler) GetOrder(c *gin.Context) {
 	})
 }
 
-// UpdateOrderStatus godoc
-// @Summary Update order status
-// @Description Update the status of an existing order
+// GetOrderStatus godoc
+// @Summary Get order status
+// @Description Retrieve only the status of an order by order ID
 // @Tags orders
 // @Accept json
 // @Produce json
 // @Param id path string true "Order ID"
-// @Param status body object{status=string} true "New order status"
-// @Success 200 {object} map[string]interface{} "Order status updated"
-// @Failure 400 {object} map[string]interface{} "Invalid request"
+// @Success 200 {object} map[string]interface{} "Order status"
+// @Failure 400 {object} map[string]interface{} "Invalid order ID"
 // @Failure 404 {object} map[string]interface{} "Order not found"
-// @Failure 409 {object} map[string]interface{} "Invalid status transition"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
 // @Security BearerAuth
-// @Router /orders/{id}/status [patch]
-func (h *OrderHandler) UpdateOrderStatus(c *gin.Context) {
+// @Router /orders/{id}/status [get]
+func (h *OrderHandler) GetOrderStatus(c *gin.Context) {
 	orderID := c.Param("id")
-	h.logger.Debug("Updating order status via API", "id", orderID)
+	h.logger.Debug("Getting order status via API", "id", orderID)
 
 	if orderID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -177,48 +175,10 @@ func (h *OrderHandler) UpdateOrderStatus(c *gin.Context) {
 		return
 	}
 
-	var req struct {
-		Status string `json:"status" binding:"required"`
-	}
-	if err := c.ShouldBindJSON(&req); err != nil {
-		h.logger.Error("Failed to bind order status update request", "error", err)
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error":   "Invalid request format",
-			"details": err.Error(),
-		})
-		return
-	}
-
-	// Validate status - basic validation for now
-	status := models.OrderStatus(req.Status)
-	validStatuses := []models.OrderStatus{
-		models.OrderStatusPending,
-		models.OrderStatusConfirmed,
-		models.OrderStatusPaid,
-		models.OrderStatusShipped,
-		models.OrderStatusDelivered,
-		models.OrderStatusCancelled,
-	}
-
-	isValid := false
-	for _, validStatus := range validStatuses {
-		if status == validStatus {
-			isValid = true
-			break
-		}
-	}
-
-	if !isValid {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid order status",
-		})
-		return
-	}
-
-	// Call service
-	order, err := h.orderService.UpdateOrderStatus(c.Request.Context(), orderID, status)
+	// Call service to get order
+	order, err := h.orderService.GetOrder(c.Request.Context(), orderID)
 	if err != nil {
-		h.logger.Error("Failed to update order status", "error", err, "id", orderID, "status", req.Status)
+		h.logger.Error("Failed to get order status", "error", err, "id", orderID)
 
 		if strings.Contains(err.Error(), "not found") {
 			c.JSON(http.StatusNotFound, gin.H{
@@ -227,23 +187,15 @@ func (h *OrderHandler) UpdateOrderStatus(c *gin.Context) {
 			return
 		}
 
-		if strings.Contains(err.Error(), "cannot transition") {
-			c.JSON(http.StatusConflict, gin.H{
-				"error": err.Error(),
-			})
-			return
-		}
-
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to update order status",
+			"error": "Failed to get order status",
 		})
 		return
 	}
 
-	h.logger.Info("Order status updated successfully via API", "id", orderID, "new_status", req.Status)
+	h.logger.Debug("Order status retrieved successfully via API", "id", orderID, "status", order.Status)
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Order status updated successfully",
-		"data":    order,
+		"status": order.Status,
 	})
 }
 
@@ -352,79 +304,6 @@ func (h *OrderHandler) ListOrders(c *gin.Context) {
 	}
 
 	h.logger.Debug("Orders listed successfully via API", "count", len(response.Orders))
-	c.JSON(http.StatusOK, gin.H{
-		"data": response,
-	})
-}
-
-// GetUserOrders godoc
-// @Summary Get user orders
-// @Description Get all orders for a specific user
-// @Tags orders
-// @Accept json
-// @Produce json
-// @Param user_id path string true "User ID"
-// @Param offset query int false "Offset for pagination" default(0)
-// @Param limit query int false "Limit for pagination" default(10)
-// @Param status query string false "Filter by order status"
-// @Success 200 {object} map[string]interface{} "User orders"
-// @Failure 400 {object} map[string]interface{} "Invalid user ID"
-// @Failure 404 {object} map[string]interface{} "User not found"
-// @Failure 500 {object} map[string]interface{} "Internal server error"
-// @Security BearerAuth
-// @Router /users/{user_id}/orders [get]
-func (h *OrderHandler) GetUserOrders(c *gin.Context) {
-	userID := c.Param("user_id")
-	h.logger.Debug("Getting user orders via API", "user_id", userID)
-
-	if userID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "User ID is required",
-		})
-		return
-	}
-
-	// Parse query parameters
-	var req services.ListOrdersRequest
-
-	// Parse offset
-	if offsetStr := c.Query("offset"); offsetStr != "" {
-		if offset, err := strconv.Atoi(offsetStr); err == nil {
-			req.Offset = offset
-		}
-	}
-
-	// Parse limit
-	if limitStr := c.Query("limit"); limitStr != "" {
-		if limit, err := strconv.Atoi(limitStr); err == nil {
-			req.Limit = limit
-		}
-	}
-
-	// Parse status filter
-	if status := c.Query("status"); status != "" {
-		req.Status = models.OrderStatus(status)
-	}
-
-	// Call service
-	response, err := h.orderService.GetUserOrders(c.Request.Context(), userID, req)
-	if err != nil {
-		h.logger.Error("Failed to get user orders", "error", err, "user_id", userID)
-
-		if strings.Contains(err.Error(), "not found") {
-			c.JSON(http.StatusNotFound, gin.H{
-				"error": "User not found",
-			})
-			return
-		}
-
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to get user orders",
-		})
-		return
-	}
-
-	h.logger.Debug("User orders retrieved successfully via API", "user_id", userID, "count", len(response.Orders))
 	c.JSON(http.StatusOK, gin.H{
 		"data": response,
 	})

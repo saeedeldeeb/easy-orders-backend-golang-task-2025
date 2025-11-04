@@ -1,8 +1,8 @@
 package fx
 
 import (
+	middleware2 "easy-orders-backend/internal/api/middleware"
 	"easy-orders-backend/internal/config"
-	"easy-orders-backend/internal/middleware"
 	"easy-orders-backend/pkg/jwt"
 	"easy-orders-backend/pkg/logger"
 
@@ -18,33 +18,33 @@ var MiddlewareModule = fx.Module("middleware",
 		},
 
 		// Error Middleware
-		middleware.NewErrorMiddleware,
+		middleware2.NewErrorMiddleware,
 
 		// Auth Middleware
-		middleware.NewAuthMiddleware,
+		middleware2.NewAuthMiddleware,
 
 		// CORS Middleware
-		middleware.NewCORSMiddleware,
+		middleware2.NewCORSMiddleware,
 
 		// Rate Limiting Middleware
-		func(logger *logger.Logger) *middleware.RateLimiter {
-			return middleware.CreateStandardLimiter(logger)
+		func(logger *logger.Logger) *middleware2.RateLimiter {
+			return middleware2.CreateStandardLimiter(logger)
 		},
 
 		// Validation Middleware
-		middleware.NewValidationMiddleware,
+		middleware2.NewValidationMiddleware,
 
 		// Additional rate limiters for different use cases
 		fx.Annotate(
-			func(logger *logger.Logger) *middleware.RateLimiter {
-				return middleware.CreateStrictLimiter(logger)
+			func(logger *logger.Logger) *middleware2.RateLimiter {
+				return middleware2.CreateStrictLimiter(logger)
 			},
 			fx.ResultTags(`name:"strict_limiter"`),
 		),
 
 		fx.Annotate(
-			func(logger *logger.Logger) *middleware.RateLimiter {
-				return middleware.CreateGenerousLimiter(logger)
+			func(logger *logger.Logger) *middleware2.RateLimiter {
+				return middleware2.CreateGenerousLimiter(logger)
 			},
 			fx.ResultTags(`name:"generous_limiter"`),
 		),

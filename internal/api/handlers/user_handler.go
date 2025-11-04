@@ -1,11 +1,10 @@
 package handlers
 
 import (
+	"easy-orders-backend/internal/api/middleware"
 	"net/http"
-	"strconv"
 	"strings"
 
-	"easy-orders-backend/internal/middleware"
 	"easy-orders-backend/internal/services"
 	"easy-orders-backend/pkg/errors"
 	"easy-orders-backend/pkg/logger"
@@ -146,75 +145,6 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, user)
-}
-
-// DeleteUser godoc
-// @Summary Delete user
-// @Description Delete a user account
-// @Tags users
-// @Accept json
-// @Produce json
-// @Param id path string true "User ID"
-// @Success 204 "User deleted successfully"
-// @Failure 400 {object} map[string]interface{} "Invalid user ID"
-// @Failure 500 {object} map[string]interface{} "Internal server error"
-// @Security BearerAuth
-// @Router /users/{id} [delete]
-func (h *UserHandler) DeleteUser(c *gin.Context) {
-	id := c.Param("id")
-	if id == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "User ID is required"})
-		return
-	}
-
-	err := h.userService.DeleteUser(c.Request.Context(), id)
-	if err != nil {
-		h.logger.Error("Failed to delete user", "error", err, "id", id)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete user"})
-		return
-	}
-
-	c.JSON(http.StatusNoContent, nil)
-}
-
-// ListUsers godoc
-// @Summary List users
-// @Description Get a paginated list of users
-// @Tags users
-// @Accept json
-// @Produce json
-// @Param offset query int false "Offset for pagination" default(0)
-// @Param limit query int false "Limit for pagination" default(10)
-// @Success 200 {object} services.ListUsersResponse "List of users"
-// @Failure 500 {object} map[string]interface{} "Internal server error"
-// @Security BearerAuth
-// @Router /users [get]
-func (h *UserHandler) ListUsers(c *gin.Context) {
-	// Parse query parameters for pagination
-	var req services.ListUsersRequest
-
-	// Parse offset
-	if offsetStr := c.Query("offset"); offsetStr != "" {
-		if offset, err := strconv.Atoi(offsetStr); err == nil {
-			req.Offset = offset
-		}
-	}
-
-	// Parse limit
-	if limitStr := c.Query("limit"); limitStr != "" {
-		if limit, err := strconv.Atoi(limitStr); err == nil {
-			req.Limit = limit
-		}
-	}
-
-	users, err := h.userService.ListUsers(c.Request.Context(), req)
-	if err != nil {
-		h.logger.Error("Failed to list users", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to list users"})
-		return
-	}
-
-	c.JSON(http.StatusOK, users)
 }
 
 // AuthenticateUser godoc

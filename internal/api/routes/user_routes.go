@@ -12,10 +12,8 @@ func RegisterUserRoutes(router *gin.RouterGroup, handler *handlers.UserHandler) 
 	users := router.Group("/users")
 	{
 		users.POST("", handler.CreateUser)
-		users.GET("", handler.ListUsers)
 		users.GET("/:id", handler.GetUser)
 		users.PUT("/:id", handler.UpdateUser)
-		users.DELETE("/:id", handler.DeleteUser)
 	}
 
 	// Authentication routes

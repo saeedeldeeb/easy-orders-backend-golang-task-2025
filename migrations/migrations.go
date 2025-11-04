@@ -1,4 +1,4 @@
-package database
+package migrations
 
 import (
 	"easy-orders-backend/internal/models"

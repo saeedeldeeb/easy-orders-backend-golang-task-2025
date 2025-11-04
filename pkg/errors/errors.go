@@ -1,6 +1,7 @@
 package errors
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 )
@@ -9,27 +10,27 @@ import (
 type ErrorType string
 
 const (
-	// Validation errors
+	// ErrorTypeValidation Validation errors
 	ErrorTypeValidation ErrorType = "VALIDATION_ERROR"
 	ErrorTypeNotFound   ErrorType = "NOT_FOUND"
 	ErrorTypeConflict   ErrorType = "CONFLICT"
 
-	// Authentication/Authorization errors
+	// ErrorTypeUnauthorized Authentication/Authorization errors
 	ErrorTypeUnauthorized ErrorType = "UNAUTHORIZED"
 	ErrorTypeForbidden    ErrorType = "FORBIDDEN"
 
-	// Business logic errors
+	// ErrorTypeBusiness Business logic errors
 	ErrorTypeBusiness          ErrorType = "BUSINESS_ERROR"
 	ErrorTypeInsufficientStock ErrorType = "INSUFFICIENT_STOCK"
 	ErrorTypeInvalidTransition ErrorType = "INVALID_TRANSITION"
 	ErrorTypePaymentFailed     ErrorType = "PAYMENT_FAILED"
 
-	// Infrastructure errors
+	// ErrorTypeDatabase Infrastructure errors
 	ErrorTypeDatabase ErrorType = "DATABASE_ERROR"
 	ErrorTypeExternal ErrorType = "EXTERNAL_SERVICE_ERROR"
 	ErrorTypeInternal ErrorType = "INTERNAL_ERROR"
 
-	// Rate limiting errors
+	// ErrorTypeRateLimit Rate limiting errors
 	ErrorTypeRateLimit ErrorType = "RATE_LIMIT_EXCEEDED"
 )
 
@@ -81,7 +82,7 @@ func NewAppError(errType ErrorType, message string, statusCode int) *AppError {
 	}
 }
 
-// Validation Errors
+// NewValidationError Validation Errors
 func NewValidationError(message string) *AppError {
 	return NewAppError(ErrorTypeValidation, message, http.StatusBadRequest)
 }
@@ -92,7 +93,7 @@ func NewValidationErrorWithDetails(message, details string) *AppError {
 	return err
 }
 
-// Not Found Errors
+// NewNotFoundError Not Found Errors
 func NewNotFoundError(resource string) *AppError {
 	return NewAppError(ErrorTypeNotFound, fmt.Sprintf("%s not found", resource), http.StatusNotFound)
 }
@@ -103,7 +104,7 @@ func NewNotFoundErrorWithID(resource, id string) *AppError {
 	return err
 }
 
-// Conflict Errors
+// NewConflictError Conflict Errors
 func NewConflictError(message string) *AppError {
 	return NewAppError(ErrorTypeConflict, message, http.StatusConflict)
 }
@@ -114,7 +115,7 @@ func NewDuplicateError(resource, field, value string) *AppError {
 	return err
 }
 
-// Authentication/Authorization Errors
+// NewUnauthorizedError Authentication/Authorization Errors
 func NewUnauthorizedError(message string) *AppError {
 	if message == "" {
 		message = "Authentication required"
@@ -129,7 +130,7 @@ func NewForbiddenError(message string) *AppError {
 	return NewAppError(ErrorTypeForbidden, message, http.StatusForbidden)
 }
 
-// Business Logic Errors
+// NewBusinessError Business Logic Errors
 func NewBusinessError(message string) *AppError {
 	return NewAppError(ErrorTypeBusiness, message, http.StatusBadRequest)
 }
@@ -157,7 +158,7 @@ func NewPaymentFailedError(reason string) *AppError {
 	return err
 }
 
-// Infrastructure Errors
+// NewDatabaseError Infrastructure Errors
 func NewDatabaseError(message string, cause error) *AppError {
 	err := NewAppError(ErrorTypeDatabase, message, http.StatusInternalServerError)
 	err.WithCause(cause)
@@ -177,7 +178,7 @@ func NewInternalError(message string, cause error) *AppError {
 	return err
 }
 
-// Rate Limiting Errors
+// NewRateLimitError Rate Limiting Errors
 func NewRateLimitError(limit int, window string) *AppError {
 	err := NewAppError(ErrorTypeRateLimit, "Rate limit exceeded", http.StatusTooManyRequests)
 	err.WithContext("limit", limit)
@@ -202,7 +203,8 @@ func WrapValidationError(field string, cause error) *AppError {
 
 // IsErrorType checks if an error is of a specific type
 func IsErrorType(err error, errType ErrorType) bool {
-	if appErr, ok := err.(*AppError); ok {
+	var appErr *AppError
+	if errors.As(err, &appErr) {
 		return appErr.Type == errType
 	}
 	return false
@@ -210,7 +212,8 @@ func IsErrorType(err error, errType ErrorType) bool {
 
 // GetStatusCode extracts HTTP status code from error
 func GetStatusCode(err error) int {
-	if appErr, ok := err.(*AppError); ok {
+	var appErr *AppError
+	if errors.As(err, &appErr) {
 		return appErr.StatusCode
 	}
 	return http.StatusInternalServerError
@@ -218,7 +221,8 @@ func GetStatusCode(err error) int {
 
 // GetErrorResponse creates a standardized error response
 func GetErrorResponse(err error) map[string]interface{} {
-	if appErr, ok := err.(*AppError); ok {
+	var appErr *AppError
+	if errors.As(err, &appErr) {
 		response := map[string]interface{}{
 			"error": map[string]interface{}{
 				"type":    appErr.Type,

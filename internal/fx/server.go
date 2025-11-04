@@ -2,6 +2,7 @@ package fx
 
 import (
 	"context"
+	middleware2 "easy-orders-backend/internal/api/middleware"
 	"fmt"
 	"net/http"
 	"time"
@@ -9,7 +10,6 @@ import (
 	"easy-orders-backend/internal/api/handlers"
 	"easy-orders-backend/internal/api/routes"
 	"easy-orders-backend/internal/config"
-	"easy-orders-backend/internal/middleware"
 	"easy-orders-backend/pkg/logger"
 
 	_ "easy-orders-backend/docs" // Import generated Swagger docs
@@ -31,10 +31,10 @@ var ServerModule = fx.Module("server",
 func NewGinEngine(
 	cfg *config.Config,
 	logger *logger.Logger,
-	errorMiddleware *middleware.ErrorMiddleware,
-	authMiddleware *middleware.AuthMiddleware,
-	corsMiddleware *middleware.CORSMiddleware,
-	rateLimiter *middleware.RateLimiter,
+	errorMiddleware *middleware2.ErrorMiddleware,
+	authMiddleware *middleware2.AuthMiddleware,
+	corsMiddleware *middleware2.CORSMiddleware,
+	rateLimiter *middleware2.RateLimiter,
 	userHandler *handlers.UserHandler,
 	productHandler *handlers.ProductHandler,
 	orderHandler *handlers.OrderHandler,

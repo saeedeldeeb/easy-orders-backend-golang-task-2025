@@ -2,9 +2,9 @@ package fx
 
 import (
 	"context"
+	"easy-orders-backend/migrations"
 
 	"easy-orders-backend/internal/config"
-	migrations "easy-orders-backend/internal/database"
 	"easy-orders-backend/pkg/database"
 	"easy-orders-backend/pkg/logger"
 

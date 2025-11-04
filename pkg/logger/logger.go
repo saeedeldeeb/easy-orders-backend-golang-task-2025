@@ -49,7 +49,7 @@ func New(level string) (*Logger, error) {
 	return &Logger{SugaredLogger: logger.Sugar()}, nil
 }
 
-// NewDevelopment creates a development logger with pretty output
+// NewDevelopment creates a development logger with a pretty output
 func NewDevelopment() (*Logger, error) {
 	logger, err := zap.NewDevelopment()
 	if err != nil {

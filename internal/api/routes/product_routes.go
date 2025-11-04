@@ -12,10 +12,8 @@ func RegisterProductRoutes(router *gin.RouterGroup, productHandler *handlers.Pro
 	{
 		products.POST("", productHandler.CreateProduct)
 		products.GET("", productHandler.ListProducts)
-		products.GET("/search", productHandler.SearchProducts)
 		products.GET("/:id", productHandler.GetProduct)
 		products.PUT("/:id", productHandler.UpdateProduct)
-		products.DELETE("/:id", productHandler.DeleteProduct)
 
 		// Inventory check endpoint (as per README requirement)
 		products.GET("/:id/inventory", inventoryHandler.CheckAvailability)

@@ -1,7 +1,7 @@
 package fx
 
 import (
-	migrations "easy-orders-backend/internal/database"
+	"easy-orders-backend/migrations"
 
 	"go.uber.org/fx"
 )

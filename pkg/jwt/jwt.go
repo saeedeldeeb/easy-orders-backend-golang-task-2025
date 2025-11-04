@@ -54,10 +54,10 @@ func (tm *TokenManager) GenerateToken(user *models.User) (string, error) {
 		},
 	}
 
-	// Create token with claims
+	// Create a token with claims
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	// Sign token with secret key
+	// Sign a token with a secret key
 	tokenString, err := token.SignedString(tm.secretKey)
 	if err != nil {
 		return "", err
@@ -123,7 +123,7 @@ func (tm *TokenManager) RefreshToken(claims *Claims) (string, error) {
 		},
 	}
 
-	// Create and sign new token
+	// Create and sign a new token
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, newClaims)
 	tokenString, err := token.SignedString(tm.secretKey)
 	if err != nil {

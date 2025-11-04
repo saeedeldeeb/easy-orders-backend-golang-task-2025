@@ -192,54 +192,6 @@ func (h *ProductHandler) UpdateProduct(c *gin.Context) {
 	})
 }
 
-// DeleteProduct godoc
-// @Summary Delete product
-// @Description Delete a product (Admin only)
-// @Tags products
-// @Accept json
-// @Produce json
-// @Param id path string true "Product ID"
-// @Success 200 {object} map[string]interface{} "Product deleted successfully"
-// @Failure 400 {object} map[string]interface{} "Invalid product ID"
-// @Failure 404 {object} map[string]interface{} "Product not found"
-// @Failure 500 {object} map[string]interface{} "Internal server error"
-// @Security BearerAuth
-// @Router /products/{id} [delete]
-func (h *ProductHandler) DeleteProduct(c *gin.Context) {
-	productID := c.Param("id")
-	h.logger.Debug("Deleting product via API", "id", productID)
-
-	if productID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Product ID is required",
-		})
-		return
-	}
-
-	// Call service
-	err := h.productService.DeleteProduct(c.Request.Context(), productID)
-	if err != nil {
-		h.logger.Error("Failed to delete product", "error", err, "id", productID)
-
-		if strings.Contains(err.Error(), "not found") {
-			c.JSON(http.StatusNotFound, gin.H{
-				"error": "Product not found",
-			})
-			return
-		}
-
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to delete product",
-		})
-		return
-	}
-
-	h.logger.Info("Product deleted successfully via API", "id", productID)
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Product deleted successfully",
-	})
-}
-
 // ListProducts godoc
 // @Summary List products
 // @Description Get a paginated list of products with optional filters
@@ -295,65 +247,6 @@ func (h *ProductHandler) ListProducts(c *gin.Context) {
 	}
 
 	h.logger.Debug("Products listed successfully via API", "count", len(response.Products))
-	c.JSON(http.StatusOK, gin.H{
-		"data": response,
-	})
-}
-
-// SearchProducts godoc
-// @Summary Search products
-// @Description Search products by name or description
-// @Tags products
-// @Accept json
-// @Produce json
-// @Param q query string true "Search query"
-// @Param offset query int false "Offset for pagination" default(0)
-// @Param limit query int false "Limit for pagination" default(10)
-// @Success 200 {object} map[string]interface{} "Search results"
-// @Failure 400 {object} map[string]interface{} "Search query is required"
-// @Failure 500 {object} map[string]interface{} "Internal server error"
-// @Security BearerAuth
-// @Router /products/search [get]
-func (h *ProductHandler) SearchProducts(c *gin.Context) {
-	h.logger.Debug("Searching products via API")
-
-	query := c.Query("q")
-	if query == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Search query is required",
-		})
-		return
-	}
-
-	// Parse query parameters
-	var req services.SearchProductsRequest
-	req.Query = query
-
-	// Parse offset
-	if offsetStr := c.Query("offset"); offsetStr != "" {
-		if offset, err := strconv.Atoi(offsetStr); err == nil {
-			req.Offset = offset
-		}
-	}
-
-	// Parse limit
-	if limitStr := c.Query("limit"); limitStr != "" {
-		if limit, err := strconv.Atoi(limitStr); err == nil {
-			req.Limit = limit
-		}
-	}
-
-	// Call service
-	response, err := h.productService.SearchProducts(c.Request.Context(), req)
-	if err != nil {
-		h.logger.Error("Failed to search products", "error", err, "query", query)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to search products",
-		})
-		return
-	}
-
-	h.logger.Debug("Product search completed successfully via API", "query", query, "count", len(response.Products))
 	c.JSON(http.StatusOK, gin.H{
 		"data": response,
 	})
