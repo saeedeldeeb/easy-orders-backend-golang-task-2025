@@ -18,8 +18,6 @@ help:
 	@echo "  env-check     - Validate docker-compose configuration"
 	@echo "  compile-check - Check Go compilation"
 	@echo "  validate      - Run full validation (env + compile)"
-	@echo "  migrate-up    - Run database migrations"
-	@echo "  migrate-down  - Rollback database migrations"
 	@echo "  seed          - Seed database with test data"
 	@echo "  lint          - Run linters"
 	@echo "  fmt           - Format code"
@@ -60,18 +58,7 @@ docker-build:
 # Start development environment with hot reload (uses .env file)
 dev:
 	@echo "Starting development environment with configuration from .env file..."
-	docker-compose -f docker-compose.dev.yml up
-
-# Run database migrations (placeholder - will implement later)
-migrate-up:
-	@echo "Database migrations will be implemented with GORM"
-
-migrate-down:
-	@echo "Database rollback will be implemented with GORM"
-
-# Seed database with test data (placeholder)
-seed:
-	@echo "Database seeding will be implemented later"
+	docker-compose -f docker-compose.dev.yml up -d
 
 # Run linters
 lint:
