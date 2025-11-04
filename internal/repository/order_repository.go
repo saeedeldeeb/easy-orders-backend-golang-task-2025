@@ -176,3 +176,42 @@ func (r *orderRepository) ListByStatus(ctx context.Context, status models.OrderS
 	r.logger.Debug("Orders by status retrieved from database", "status", status, "count", len(orders))
 	return orders, nil
 }
+
+func (r *orderRepository) Count(ctx context.Context) (int64, error) {
+	r.logger.Debug("Counting total orders")
+
+	var count int64
+	if err := r.db.WithContext(ctx).Model(&models.Order{}).Count(&count).Error; err != nil {
+		r.logger.Error("Failed to count orders", "error", err)
+		return 0, err
+	}
+
+	r.logger.Debug("Total orders counted", "count", count)
+	return count, nil
+}
+
+func (r *orderRepository) CountByStatus(ctx context.Context, status models.OrderStatus) (int64, error) {
+	r.logger.Debug("Counting orders by status", "status", status)
+
+	var count int64
+	if err := r.db.WithContext(ctx).Model(&models.Order{}).Where("status = ?", status).Count(&count).Error; err != nil {
+		r.logger.Error("Failed to count orders by status", "error", err, "status", status)
+		return 0, err
+	}
+
+	r.logger.Debug("Total orders by status counted", "status", status, "count", count)
+	return count, nil
+}
+
+func (r *orderRepository) CountByUserID(ctx context.Context, userID string) (int64, error) {
+	r.logger.Debug("Counting orders by user ID", "user_id", userID)
+
+	var count int64
+	if err := r.db.WithContext(ctx).Model(&models.Order{}).Where("user_id = ?", userID).Count(&count).Error; err != nil {
+		r.logger.Error("Failed to count orders by user ID", "error", err, "user_id", userID)
+		return 0, err
+	}
+
+	r.logger.Debug("Total orders by user counted", "user_id", userID, "count", count)
+	return count, nil
+}

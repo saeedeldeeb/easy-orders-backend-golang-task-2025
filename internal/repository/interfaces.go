@@ -18,6 +18,7 @@ type UserRepository interface {
 	Update(ctx context.Context, user *models.User) error
 	Delete(ctx context.Context, id string) error
 	List(ctx context.Context, offset, limit int) ([]*models.User, error)
+	Count(ctx context.Context) (int64, error)
 }
 
 // ProductRepository defines product data access methods
@@ -30,6 +31,9 @@ type ProductRepository interface {
 	List(ctx context.Context, offset, limit int) ([]*models.Product, error)
 	Search(ctx context.Context, query string, offset, limit int) ([]*models.Product, error)
 	GetActive(ctx context.Context, offset, limit int) ([]*models.Product, error)
+	Count(ctx context.Context) (int64, error)
+	CountActive(ctx context.Context) (int64, error)
+	CountSearch(ctx context.Context, query string) (int64, error)
 }
 
 // OrderRepository defines order data access methods
@@ -42,6 +46,9 @@ type OrderRepository interface {
 	UpdateStatus(ctx context.Context, id string, status models.OrderStatus) error
 	List(ctx context.Context, offset, limit int) ([]*models.Order, error)
 	ListByStatus(ctx context.Context, status models.OrderStatus, offset, limit int) ([]*models.Order, error)
+	Count(ctx context.Context) (int64, error)
+	CountByStatus(ctx context.Context, status models.OrderStatus) (int64, error)
+	CountByUserID(ctx context.Context, userID string) (int64, error)
 }
 
 // OrderItemRepository defines order item data access methods

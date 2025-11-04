@@ -112,3 +112,16 @@ func (r *userRepository) List(ctx context.Context, offset, limit int) ([]*models
 	r.logger.Debug("Users retrieved from database", "count", len(users))
 	return users, nil
 }
+
+func (r *userRepository) Count(ctx context.Context) (int64, error) {
+	r.logger.Debug("Counting total users")
+
+	var count int64
+	if err := r.db.WithContext(ctx).Model(&models.User{}).Count(&count).Error; err != nil {
+		r.logger.Error("Failed to count users", "error", err)
+		return 0, err
+	}
+
+	r.logger.Debug("Total users counted", "count", count)
+	return count, nil
+}

@@ -229,6 +229,7 @@ func (s *productService) ListProducts(ctx context.Context, req ListProductsReque
 		offset = 0
 	}
 
+	// Get paginated products
 	var products []*models.Product
 	var err error
 
@@ -240,6 +241,19 @@ func (s *productService) ListProducts(ctx context.Context, req ListProductsReque
 
 	if err != nil {
 		s.logger.Error("Failed to list products", "error", err)
+		return nil, err
+	}
+
+	// Get total count
+	var totalCount int64
+	if req.ActiveOnly {
+		totalCount, err = s.productRepo.CountActive(ctx)
+	} else {
+		totalCount, err = s.productRepo.Count(ctx)
+	}
+
+	if err != nil {
+		s.logger.Error("Failed to count products", "error", err)
 		return nil, err
 	}
 
@@ -268,7 +282,7 @@ func (s *productService) ListProducts(ctx context.Context, req ListProductsReque
 		Products: productResponses,
 		Offset:   offset,
 		Limit:    limit,
-		Total:    len(productResponses),
+		Total:    int(totalCount),
 	}, nil
 }
 
@@ -290,9 +304,17 @@ func (s *productService) SearchProducts(ctx context.Context, req SearchProductsR
 		offset = 0
 	}
 
+	// Get search results
 	products, err := s.productRepo.Search(ctx, req.Query, offset, limit)
 	if err != nil {
 		s.logger.Error("Failed to search products", "error", err, "query", req.Query)
+		return nil, err
+	}
+
+	// Get total count of search results
+	totalCount, err := s.productRepo.CountSearch(ctx, req.Query)
+	if err != nil {
+		s.logger.Error("Failed to count search results", "error", err, "query", req.Query)
 		return nil, err
 	}
 
@@ -321,6 +343,6 @@ func (s *productService) SearchProducts(ctx context.Context, req SearchProductsR
 		Products: productResponses,
 		Offset:   offset,
 		Limit:    limit,
-		Total:    len(productResponses),
+		Total:    int(totalCount),
 	}, nil
 }

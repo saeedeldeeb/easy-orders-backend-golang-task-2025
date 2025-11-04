@@ -157,3 +157,47 @@ func (r *productRepository) GetActive(ctx context.Context, offset, limit int) ([
 	r.logger.Debug("Active products retrieved from database", "count", len(products))
 	return products, nil
 }
+
+func (r *productRepository) Count(ctx context.Context) (int64, error) {
+	r.logger.Debug("Counting total products")
+
+	var count int64
+	if err := r.db.WithContext(ctx).Model(&models.Product{}).Count(&count).Error; err != nil {
+		r.logger.Error("Failed to count products", "error", err)
+		return 0, err
+	}
+
+	r.logger.Debug("Total products counted", "count", count)
+	return count, nil
+}
+
+func (r *productRepository) CountActive(ctx context.Context) (int64, error) {
+	r.logger.Debug("Counting active products")
+
+	var count int64
+	if err := r.db.WithContext(ctx).Model(&models.Product{}).Where("is_active = ?", true).Count(&count).Error; err != nil {
+		r.logger.Error("Failed to count active products", "error", err)
+		return 0, err
+	}
+
+	r.logger.Debug("Total active products counted", "count", count)
+	return count, nil
+}
+
+func (r *productRepository) CountSearch(ctx context.Context, query string) (int64, error) {
+	r.logger.Debug("Counting search results", "query", query)
+
+	var count int64
+	searchPattern := "%" + query + "%"
+
+	if err := r.db.WithContext(ctx).Model(&models.Product{}).
+		Where("name ILIKE ? OR description ILIKE ? OR sku ILIKE ?", searchPattern, searchPattern, searchPattern).
+		Where("is_active = ?", true).
+		Count(&count).Error; err != nil {
+		r.logger.Error("Failed to count search results", "error", err, "query", query)
+		return 0, err
+	}
+
+	r.logger.Debug("Total search results counted", "query", query, "count", count)
+	return count, nil
+}

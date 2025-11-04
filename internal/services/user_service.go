@@ -157,9 +157,17 @@ func (s *userService) DeleteUser(ctx context.Context, id string) error {
 func (s *userService) ListUsers(ctx context.Context, req ListUsersRequest) (*ListUsersResponse, error) {
 	s.logger.Debug("Listing users", "offset", req.Offset, "limit", req.Limit)
 
+	// Get paginated users
 	users, err := s.userRepo.List(ctx, req.Offset, req.Limit)
 	if err != nil {
 		s.logger.Error("Failed to list users", "error", err)
+		return nil, err
+	}
+
+	// Get total count
+	totalCount, err := s.userRepo.Count(ctx)
+	if err != nil {
+		s.logger.Error("Failed to count users", "error", err)
 		return nil, err
 	}
 
@@ -178,7 +186,7 @@ func (s *userService) ListUsers(ctx context.Context, req ListUsersRequest) (*Lis
 		Users:  userResponses,
 		Offset: req.Offset,
 		Limit:  req.Limit,
-		Total:  len(userResponses), // TODO: Get actual total count
+		Total:  int(totalCount),
 	}, nil
 }
 

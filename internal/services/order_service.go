@@ -294,6 +294,7 @@ func (s *orderService) ListOrders(ctx context.Context, req ListOrdersRequest) (*
 		offset = 0
 	}
 
+	// Get paginated orders
 	var orders []*models.Order
 	var err error
 
@@ -305,6 +306,19 @@ func (s *orderService) ListOrders(ctx context.Context, req ListOrdersRequest) (*
 
 	if err != nil {
 		s.logger.Error("Failed to list orders", "error", err)
+		return nil, err
+	}
+
+	// Get total count
+	var totalCount int64
+	if req.Status != "" {
+		totalCount, err = s.orderRepo.CountByStatus(ctx, req.Status)
+	} else {
+		totalCount, err = s.orderRepo.Count(ctx)
+	}
+
+	if err != nil {
+		s.logger.Error("Failed to count orders", "error", err)
 		return nil, err
 	}
 
@@ -335,7 +349,7 @@ func (s *orderService) ListOrders(ctx context.Context, req ListOrdersRequest) (*
 		Orders: orderResponses,
 		Offset: offset,
 		Limit:  limit,
-		Total:  len(orderResponses),
+		Total:  int(totalCount),
 	}, nil
 }
 
@@ -367,9 +381,17 @@ func (s *orderService) GetUserOrders(ctx context.Context, userID string, req Lis
 		offset = 0
 	}
 
+	// Get paginated orders for user
 	orders, err := s.orderRepo.GetByUserID(ctx, userID, offset, limit)
 	if err != nil {
 		s.logger.Error("Failed to get user orders", "error", err, "user_id", userID)
+		return nil, err
+	}
+
+	// Get total count for user
+	totalCount, err := s.orderRepo.CountByUserID(ctx, userID)
+	if err != nil {
+		s.logger.Error("Failed to count user orders", "error", err, "user_id", userID)
 		return nil, err
 	}
 
@@ -400,6 +422,6 @@ func (s *orderService) GetUserOrders(ctx context.Context, userID string, req Lis
 		Orders: orderResponses,
 		Offset: offset,
 		Limit:  limit,
-		Total:  len(orderResponses),
+		Total:  int(totalCount),
 	}, nil
 }
