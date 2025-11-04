@@ -35,11 +35,11 @@ func NewRateLimiter(maxRequests int, window time.Duration, logger *logger.Logger
 		requests:        make(map[string]*UserRateLimit),
 		maxRequests:     maxRequests,
 		window:          window,
-		cleanupInterval: window * 2, // Cleanup old entries twice per window
+		cleanupInterval: window * 2, // Clean up old entries twice per window
 		logger:          logger,
 	}
 
-	// Start cleanup goroutine
+	// Start a cleanup goroutine
 	go rl.cleanupRoutine()
 
 	return rl
@@ -66,7 +66,7 @@ func (rl *RateLimiter) Limit() gin.HandlerFunc {
 	}
 }
 
-// LimitWithCustomConfig returns a middleware with custom rate limiting config
+// LimitWithCustomConfig returns middleware with custom rate limiting config
 func (rl *RateLimiter) LimitWithCustomConfig(maxRequests int, window time.Duration) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		identifier := rl.getIdentifier(c)
@@ -87,7 +87,7 @@ func (rl *RateLimiter) LimitWithCustomConfig(maxRequests int, window time.Durati
 
 // getIdentifier extracts identifier from request (user ID or IP)
 func (rl *RateLimiter) getIdentifier(c *gin.Context) string {
-	// Try to get user ID from auth context first
+	// Try to get user ID from the auth context first
 	if userID, exists := c.Get("user_id"); exists {
 		if userIDStr, ok := userID.(string); ok && userIDStr != "" {
 			return "user:" + userIDStr
@@ -98,19 +98,19 @@ func (rl *RateLimiter) getIdentifier(c *gin.Context) string {
 	return "ip:" + c.ClientIP()
 }
 
-// isAllowed checks if request is allowed under default rate limit
+// isAllowed checks if request is allowed under the default rate limit
 func (rl *RateLimiter) isAllowed(identifier string) bool {
 	return rl.isAllowedCustom(identifier, rl.maxRequests, rl.window)
 }
 
-// isAllowedCustom checks if request is allowed under custom rate limit
+// isAllowedCustom checks if the request is allowed under the custom rate limit
 func (rl *RateLimiter) isAllowedCustom(identifier string, maxRequests int, window time.Duration) bool {
 	rl.mutex.Lock()
 	defer rl.mutex.Unlock()
 
 	now := time.Now()
 
-	// Get or create user rate limit record
+	// Get or create a user rate limit record
 	userLimit, exists := rl.requests[identifier]
 	if !exists {
 		rl.requests[identifier] = &UserRateLimit{
@@ -126,7 +126,7 @@ func (rl *RateLimiter) isAllowedCustom(identifier string, maxRequests int, windo
 
 	// Check if we're in a new window
 	if now.Sub(userLimit.windowStart) >= window {
-		// Reset for new window
+		// Reset for a new window
 		userLimit.count = 1
 		userLimit.windowStart = now
 		return true
