@@ -28,7 +28,7 @@ func NewInventoryHandler(inventoryService services.InventoryService, logger *log
 // CheckAvailability godoc
 // @Summary Check inventory availability
 // @Description Check if a specific quantity of a product is available
-// @Tags inventory
+// @Tags products
 // @Accept json
 // @Produce json
 // @Param id path string true "Product ID"
@@ -96,14 +96,14 @@ func (h *InventoryHandler) CheckAvailability(c *gin.Context) {
 // GetLowStockAlert godoc
 // @Summary Get low stock alerts (Admin)
 // @Description Get products with low stock levels (Admin only)
-// @Tags inventory
+// @Tags admin
 // @Accept json
 // @Produce json
 // @Param threshold query int false "Stock threshold" default(10)
 // @Success 200 {object} map[string]interface{} "Low stock products"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
 // @Security BearerAuth
-// @Router /inventory/low-stock [get]
+// @Router /admin/inventory/low-stock [get]
 func (h *InventoryHandler) GetLowStockAlert(c *gin.Context) {
 	h.logger.Debug("Getting low stock alert via API")
 
