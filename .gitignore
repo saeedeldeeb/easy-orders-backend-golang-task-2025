@@ -65,3 +65,5 @@ docs/swagger.yaml
 easy-orders-backend
 main
 server
+
+__debug_*
