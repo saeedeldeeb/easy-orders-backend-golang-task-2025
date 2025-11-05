@@ -67,7 +67,7 @@ func (w *Worker) processJob(ctx context.Context, job Job) {
 	endTime := time.Now()
 	duration := endTime.Sub(startTime)
 
-	// Create result
+	// Create a result
 	result := JobResult{
 		JobID:     job.GetID(),
 		JobType:   job.GetType(),

@@ -78,7 +78,7 @@ func NewReportManager(config *ReportManagerConfig, logger *logger.Logger) *Repor
 		maxCacheSize:         config.MaxCacheSize,
 	}
 
-	// Start cache cleanup routine
+	// Start a cache cleanup routine
 	go rm.cacheCleanupRoutine(config.CleanupInterval)
 
 	return rm
@@ -150,7 +150,7 @@ func (rm *ReportManager) GenerateReportSync(ctx context.Context, req *ReportRequ
 		return cachedResult, nil
 	}
 
-	// Create result
+	// Create a result
 	result := &ReportResult{
 		ID:        fmt.Sprintf("result_%s_%d", req.ID, time.Now().UnixNano()),
 		RequestID: req.ID,
@@ -323,7 +323,7 @@ func (rm *ReportManager) checkCache(req *ReportRequest) *ReportResult {
 		return nil
 	}
 
-	// Check if cache is expired
+	// Check if the cache is expired
 	if cachedReport.IsExpired() {
 		rm.logger.Debug("Cached report expired", "cache_key", cacheKey)
 		rm.removeCacheEntry(cacheKey)
@@ -336,7 +336,7 @@ func (rm *ReportManager) checkCache(req *ReportRequest) *ReportResult {
 	cachedReport.LastAccessed = time.Now()
 	rm.cacheMutex.Unlock()
 
-	// Convert cached data to result format
+	// Convert cached data to the result format
 	result := &ReportResult{
 		ID:             fmt.Sprintf("cached_%s_%d", req.ID, time.Now().UnixNano()),
 		RequestID:      req.ID,

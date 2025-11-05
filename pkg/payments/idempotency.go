@@ -48,7 +48,7 @@ func NewIdempotencyManager(ttl time.Duration, logger *logger.Logger) *Idempotenc
 		stopCleanup: make(chan struct{}),
 	}
 
-	// Start cleanup routine
+	// Start a cleanup routine
 	manager.startCleanup()
 
 	return manager
@@ -86,7 +86,7 @@ func (im *IdempotencyManager) CheckIdempotency(ctx context.Context, req *Payment
 		return nil, false
 	}
 
-	// Check if record has expired
+	// Check if the record has expired
 	if time.Now().After(record.ExpiresAt) {
 		im.logger.Debug("Idempotency record expired",
 			"key", req.IdempotencyKey,

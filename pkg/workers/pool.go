@@ -23,7 +23,7 @@ type Job interface {
 	// GetPriority returns the priority level (higher number = higher priority)
 	GetPriority() int
 
-	// GetRetryCount returns current retry attempt count
+	// GetRetryCount returns the current retry attempt count
 	GetRetryCount() int
 
 	// IncrementRetryCount increments the retry counter
@@ -147,7 +147,7 @@ func (wp *WorkerPool) Start(ctx context.Context) error {
 		}(worker)
 	}
 
-	// Start result processor if metrics are enabled
+	// Start the result processor if metrics are enabled
 	if wp.config.EnableMetrics {
 		wp.wg.Add(1)
 		go func() {
@@ -219,7 +219,7 @@ func (wp *WorkerPool) SubmitJob(job Job) error {
 
 // SubmitJobWithPriority adds a high-priority job that should be processed first
 func (wp *WorkerPool) SubmitJobWithPriority(job Job) error {
-	// For now, treat as regular job. Could implement priority queue later
+	// For now, treat as a regular job. Could implement a priority queue later
 	return wp.SubmitJob(job)
 }
 
@@ -296,7 +296,7 @@ func (wp *WorkerPool) processResults(ctx context.Context) {
 	}
 }
 
-// updateMetrics updates pool metrics with job result
+// updateMetrics updates pool metrics with a job result
 func (wp *WorkerPool) updateMetrics(result JobResult) {
 	wp.metrics.mux.Lock()
 	defer wp.metrics.mux.Unlock()
