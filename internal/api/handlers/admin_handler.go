@@ -96,11 +96,6 @@ func (h *AdminHandler) UpdateOrderStatus(c *gin.Context) {
 	orderID := c.Param("id")
 	h.logger.Debug("Updating order status via admin API", "id", orderID)
 
-	// Define inline struct matching the one in routes
-	type UpdateStatusRequest struct {
-		Status string `json:"status" validate:"required"`
-	}
-
 	// Get validated request from context
 	validatedReq, exists := middleware.GetValidatedRequest(c)
 	if !exists {
@@ -111,7 +106,7 @@ func (h *AdminHandler) UpdateOrderStatus(c *gin.Context) {
 	}
 
 	// Type assert to the expected request type
-	req := *validatedReq.(*UpdateStatusRequest)
+	req := *validatedReq.(*services.UpdateStatusRequest)
 
 	// Call service (cast string to OrderStatus type)
 	order, err := h.orderService.UpdateOrderStatus(c.Request.Context(), orderID, models.OrderStatus(req.Status))
@@ -168,13 +163,8 @@ func (h *AdminHandler) GenerateDailySalesReport(c *gin.Context) {
 		return
 	}
 
-	// Define inline struct matching the one in routes
-	type DailySalesReportQuery struct {
-		Date string `form:"date"`
-	}
-
 	// Type assert to the expected request type
-	req := *validatedQuery.(*DailySalesReportQuery)
+	req := *validatedQuery.(*services.DailySalesReportQuery)
 
 	// Call service
 	report, err := h.reportService.GenerateDailySalesReport(c.Request.Context(), req.Date)

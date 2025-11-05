@@ -124,6 +124,11 @@ type UpdateUserRequest struct {
 	Email *string `json:"email,omitempty" validate:"omitempty,email"`
 }
 
+type LoginRequest struct {
+	Email    string `json:"email" validate:"required,email"`
+	Password string `json:"password" validate:"required,min=8"`
+}
+
 type ListUsersRequest struct {
 	Offset int `json:"offset"`
 	Limit  int `json:"limit"`
@@ -244,6 +249,10 @@ type ProcessPaymentRequest struct {
 	ExternalReference string  `json:"external_reference,omitempty"`
 }
 
+type RefundRequest struct {
+	Amount float64 `json:"amount" validate:"required,gt=0"`
+}
+
 type PaymentResponse struct {
 	ID      string               `json:"id"`
 	OrderID string               `json:"order_id"`
@@ -294,6 +303,18 @@ type GenerateSalesReportRequest struct {
 
 type GetSalesReportRequest struct {
 	Date string `json:"date"`
+}
+
+type UpdateStatusRequest struct {
+	Status string `json:"status" validate:"required"`
+}
+
+type DailySalesReportQuery struct {
+	Date string `form:"date"`
+}
+
+type LowStockQuery struct {
+	Threshold int `form:"threshold" validate:"omitempty,gte=0"`
 }
 
 type LowStockRequest struct {

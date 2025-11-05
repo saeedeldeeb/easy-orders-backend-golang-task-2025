@@ -162,12 +162,6 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 // @Failure 401 {object} map[string]interface{} "Invalid credentials"
 // @Router /auth/login [post]
 func (h *UserHandler) AuthenticateUser(c *gin.Context) {
-	// Define inline struct matching the one in routes
-	type LoginRequest struct {
-		Email    string `json:"email" validate:"required,email"`
-		Password string `json:"password" validate:"required,min=8"`
-	}
-
 	// Get validated request from context
 	validatedReq, exists := middleware.GetValidatedRequest(c)
 	if !exists {
@@ -177,7 +171,7 @@ func (h *UserHandler) AuthenticateUser(c *gin.Context) {
 	}
 
 	// Type assert to the expected request type
-	req := *validatedReq.(*LoginRequest)
+	req := *validatedReq.(*services.LoginRequest)
 
 	auth, err := h.userService.AuthenticateUser(c.Request.Context(), req.Email, req.Password)
 	if err != nil {

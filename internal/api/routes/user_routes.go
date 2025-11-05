@@ -31,13 +31,8 @@ func RegisterUserRoutes(router *gin.RouterGroup, handler *handlers.UserHandler, 
 	// Authentication routes
 	auth := router.Group("/auth")
 	{
-		// Define inline struct for login request validation
-		type LoginRequest struct {
-			Email    string `json:"email" validate:"required,email"`
-			Password string `json:"password" validate:"required,min=8"`
-		}
 		auth.POST("/login",
-			validationMw.ValidateJSON(LoginRequest{}),
+			validationMw.ValidateJSON(services.LoginRequest{}),
 			handler.AuthenticateUser,
 		)
 	}

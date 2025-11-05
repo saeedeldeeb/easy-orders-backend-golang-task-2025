@@ -17,7 +17,7 @@ type AuthMiddleware struct {
 	logger       *logger.Logger
 }
 
-// NewAuthMiddleware creates a new auth middleware
+// NewAuthMiddleware creates new auth middleware
 func NewAuthMiddleware(tokenManager *jwt.TokenManager, logger *logger.Logger) *AuthMiddleware {
 	return &AuthMiddleware{
 		tokenManager: tokenManager,

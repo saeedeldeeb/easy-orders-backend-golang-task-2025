@@ -43,7 +43,7 @@ func NewGinEngine(
 	inventoryHandler *handlers.InventoryHandler,
 	adminHandler *handlers.AdminHandler,
 ) *gin.Engine {
-	// Set gin mode based on environment
+	// Set gin mode based on the environment
 	if cfg.Server.Environment == "production" {
 		gin.SetMode(gin.ReleaseMode)
 	} else {
@@ -107,7 +107,7 @@ func NewGinEngine(
 			routes.RegisterAdminRoutes(admin, adminHandler, inventoryHandler, validationMiddleware)
 		}
 
-		// Health check under API version
+		// Health check under an API version
 		v1.GET("/ping", func(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{"message": "pong"})
 		})

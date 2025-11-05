@@ -21,13 +21,9 @@ func RegisterPaymentRoutes(router *gin.RouterGroup, handler *handlers.PaymentHan
 			handler.GetPayment,
 		)
 
-		// Define inline struct for refund request validation
-		type RefundRequest struct {
-			Amount float64 `json:"amount" validate:"required,gt=0"`
-		}
 		payments.POST("/:id/refund",
 			validationMw.ValidatePathParams(map[string]string{"id": "required"}),
-			validationMw.ValidateJSON(RefundRequest{}),
+			validationMw.ValidateJSON(services.RefundRequest{}),
 			handler.RefundPayment,
 		)
 	}

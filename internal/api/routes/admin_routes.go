@@ -20,13 +20,9 @@ func RegisterAdminRoutes(router *gin.RouterGroup, adminHandler *handlers.AdminHa
 				adminHandler.GetAllOrders,
 			)
 
-			// Define inline struct for status update request validation
-			type UpdateStatusRequest struct {
-				Status string `json:"status" validate:"required"`
-			}
 			orders.PATCH("/:id/status",
 				validationMw.ValidatePathParams(map[string]string{"id": "required"}),
-				validationMw.ValidateJSON(UpdateStatusRequest{}),
+				validationMw.ValidateJSON(services.UpdateStatusRequest{}),
 				adminHandler.UpdateOrderStatus,
 			)
 		}
@@ -34,12 +30,8 @@ func RegisterAdminRoutes(router *gin.RouterGroup, adminHandler *handlers.AdminHa
 		// Reports - Only daily sales report as per README requirement
 		reports := admin.Group("/reports")
 		{
-			// Define inline struct for date query parameter validation
-			type DailySalesReportQuery struct {
-				Date string `form:"date"`
-			}
 			reports.GET("/daily",
-				validationMw.ValidateQuery(DailySalesReportQuery{}),
+				validationMw.ValidateQuery(services.DailySalesReportQuery{}),
 				adminHandler.GenerateDailySalesReport,
 			)
 		}
@@ -47,12 +39,8 @@ func RegisterAdminRoutes(router *gin.RouterGroup, adminHandler *handlers.AdminHa
 		// Inventory - Low stock alerts as per README requirement
 		inventory := admin.Group("/inventory")
 		{
-			// Define inline struct for threshold query parameter validation
-			type LowStockQuery struct {
-				Threshold int `form:"threshold" validate:"omitempty,gte=0"`
-			}
 			inventory.GET("/low-stock",
-				validationMw.ValidateQuery(LowStockQuery{}),
+				validationMw.ValidateQuery(services.LowStockQuery{}),
 				inventoryHandler.GetLowStockAlert,
 			)
 		}

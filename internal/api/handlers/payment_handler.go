@@ -166,11 +166,6 @@ func (h *PaymentHandler) RefundPayment(c *gin.Context) {
 	paymentID := c.Param("id")
 	h.logger.Debug("Processing refund via API", "payment_id", paymentID)
 
-	// Define inline struct matching the one in routes
-	type RefundRequest struct {
-		Amount float64 `json:"amount" validate:"required,gt=0"`
-	}
-
 	// Get validated request from context
 	validatedReq, exists := middleware.GetValidatedRequest(c)
 	if !exists {
@@ -180,7 +175,7 @@ func (h *PaymentHandler) RefundPayment(c *gin.Context) {
 	}
 
 	// Type assert to the expected request type
-	req := *validatedReq.(*RefundRequest)
+	req := *validatedReq.(*services.RefundRequest)
 
 	// Call service
 	refund, err := h.paymentService.RefundPayment(c.Request.Context(), paymentID, req.Amount)
