@@ -1,0 +1,53 @@
+# Debug Dockerfile for GoLand Remote Debugging
+# This Dockerfile is optimized for debugging with Delve debugger
+
+FROM golang:1.23-alpine AS builder
+
+# Install build dependencies
+RUN apk add --no-cache git ca-certificates
+
+# Install Delve debugger
+RUN go install github.com/go-delve/delve/cmd/dlv@latest
+
+# Set working directory
+WORKDIR /app
+
+# Copy go mod files
+COPY go.mod go.sum ./
+
+# Download dependencies
+RUN go mod download
+
+# Note: We don't build the binary here because it will be built at runtime
+# from the mounted source code volume. This allows for hot debugging with
+# up-to-date source code.
+
+# Final stage - use golang image since we need to compile at runtime
+FROM golang:1.23-alpine
+
+# Install ca-certificates
+RUN apk --no-cache add ca-certificates
+
+WORKDIR /app
+
+# Copy Delve from builder
+COPY --from=builder /go/bin/dlv /usr/local/bin/dlv
+
+# Copy Go module cache for faster builds
+COPY --from=builder /go/pkg/mod /go/pkg/mod
+
+# Expose application port
+EXPOSE 8080
+
+# Expose Delve debugger port
+EXPOSE 2345
+
+# Run with Delve in debug mode
+# dlv debug compiles the binary at runtime, which works with volume mounts
+# --headless: Run without a terminal UI
+# --listen=:2345: Listen on all interfaces, port 2345
+# --api-version=2: Use Delve API version 2
+# --accept-multiclient: Allow multiple client connections (useful for reconnecting)
+# --continue: Automatically continue execution (GoLand will handle breakpoints)
+# --build-flags: Pass compiler flags to disable optimizations for better debugging
+CMD ["dlv", "debug", "./cmd/server/main.go", "--headless", "--listen=:2345", "--api-version=2", "--accept-multiclient", "--continue", "--build-flags=-gcflags='all=-N -l'"]

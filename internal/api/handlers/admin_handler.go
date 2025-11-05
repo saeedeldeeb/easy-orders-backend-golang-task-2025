@@ -39,8 +39,8 @@ func NewAdminHandler(
 // @Tags admin
 // @Accept json
 // @Produce json
-// @Param offset query int false "Offset for pagination" default(0)
-// @Param limit query int false "Limit for pagination" default(10)
+// @Param page query int false "Page number for pagination" default(1)
+// @Param limit query int false "Number of items per page" default(10)
 // @Param status query string false "Filter by order status"
 // @Success 200 {object} object{data=services.ListOrdersResponse} "List of all orders"
 // @Failure 500 {object} map[string]interface{} "Internal server error"

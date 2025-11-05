@@ -191,8 +191,8 @@ func (h *ProductHandler) UpdateProduct(c *gin.Context) {
 // @Tags products
 // @Accept json
 // @Produce json
-// @Param offset query int false "Offset for pagination" default(0)
-// @Param limit query int false "Limit for pagination" default(10)
+// @Param page query int false "Page number for pagination" default(1)
+// @Param limit query int false "Number of items per page" default(10)
 // @Param category_id query string false "Filter by category ID"
 // @Param active_only query boolean false "Show only active products" default(false)
 // @Success 200 {object} object{data=services.ListProductsResponse} "List of products"

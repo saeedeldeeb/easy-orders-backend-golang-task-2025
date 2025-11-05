@@ -1,0 +1,78 @@
+services:
+  # Debug version with Delve debugger for GoLand
+  app-debug:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.debug
+    container_name: easy-orders-app-debug
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=${DB_PORT}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - DB_SSLMODE=${DB_SSLMODE}
+      - REDIS_HOST=redis
+      - REDIS_PORT=${REDIS_PORT}
+      - JWT_SECRET=${JWT_SECRET_DEV}
+      - SERVER_PORT=${SERVER_PORT}
+      - LOG_LEVEL=${LOG_LEVEL_DEV}
+      - ENVIRONMENT=${ENVIRONMENT_DEV}
+    ports:
+      - '${SERVER_PORT}:8080'  # Application port
+      - '2345:2345'             # Delve debugger port
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - easy-orders-network
+    volumes:
+      # Mount source code for file synchronization with GoLand
+      - ./:/app
+    restart: unless-stopped
+    # Security options to allow debugging
+    security_opt:
+      - "apparmor:unconfined"
+    cap_add:
+      - SYS_PTRACE
+
+  # Use the same postgres and redis from main docker-compose.yml
+  postgres:
+    image: postgres:15-alpine
+    container_name: easy-orders-postgres
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - '${DB_EXTERNAL_PORT}:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - easy-orders-network
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    extends:
+      file: docker-compose.yml
+      service: redis
+
+  adminer:
+    extends:
+      file: docker-compose.yml
+      service: adminer
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  easy-orders-network:
+    driver: bridge

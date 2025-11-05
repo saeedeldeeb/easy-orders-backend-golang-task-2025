@@ -281,7 +281,7 @@ func (s *orderService) CancelOrder(ctx context.Context, id string) error {
 }
 
 func (s *orderService) ListOrders(ctx context.Context, req ListOrdersRequest) (*ListOrdersResponse, error) {
-	s.logger.Debug("Listing orders", "offset", req.Offset, "limit", req.Limit, "status", req.Status)
+	s.logger.Debug("Listing orders", "page", req.Page, "limit", req.Limit, "status", req.Status)
 
 	// Set default limit if not provided
 	limit := req.Limit
@@ -289,10 +289,14 @@ func (s *orderService) ListOrders(ctx context.Context, req ListOrdersRequest) (*
 		limit = 20 // Default limit
 	}
 
-	offset := req.Offset
-	if offset < 0 {
-		offset = 0
+	// Set default page to 1 if not provided or invalid
+	page := req.Page
+	if page < 1 {
+		page = 1
 	}
+
+	// Calculate offset from page number
+	offset := (page - 1) * limit
 
 	// Get paginated orders
 	var orders []*models.Order
@@ -347,14 +351,14 @@ func (s *orderService) ListOrders(ctx context.Context, req ListOrdersRequest) (*
 
 	return &ListOrdersResponse{
 		Orders: orderResponses,
-		Offset: offset,
+		Page:   page,
 		Limit:  limit,
 		Total:  int(totalCount),
 	}, nil
 }
 
 func (s *orderService) GetUserOrders(ctx context.Context, userID string, req ListOrdersRequest) (*ListOrdersResponse, error) {
-	s.logger.Debug("Getting user orders", "user_id", userID, "offset", req.Offset, "limit", req.Limit)
+	s.logger.Debug("Getting user orders", "user_id", userID, "page", req.Page, "limit", req.Limit)
 
 	if userID == "" {
 		return nil, errors.New("user ID is required")
@@ -376,10 +380,14 @@ func (s *orderService) GetUserOrders(ctx context.Context, userID string, req Lis
 		limit = 20 // Default limit
 	}
 
-	offset := req.Offset
-	if offset < 0 {
-		offset = 0
+	// Set default page to 1 if not provided or invalid
+	page := req.Page
+	if page < 1 {
+		page = 1
 	}
+
+	// Calculate offset from page number
+	offset := (page - 1) * limit
 
 	// Get paginated orders for user
 	orders, err := s.orderRepo.GetByUserID(ctx, userID, offset, limit)
@@ -420,7 +428,7 @@ func (s *orderService) GetUserOrders(ctx context.Context, userID string, req Lis
 
 	return &ListOrdersResponse{
 		Orders: orderResponses,
-		Offset: offset,
+		Page:   page,
 		Limit:  limit,
 		Total:  int(totalCount),
 	}, nil

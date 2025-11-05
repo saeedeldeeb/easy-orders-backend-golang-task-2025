@@ -1,6 +1,6 @@
 # Easy Orders Backend Makefile
 
-.PHONY: help build run test clean docker-up docker-down docker-build dev migrate
+.PHONY: help build run test clean docker-up docker-down docker-build dev debug debug-down debug-logs migrate
 
 # Default target
 help:
@@ -14,6 +14,9 @@ help:
 	@echo "  docker-down   - Stop all services"
 	@echo "  docker-build  - Build Docker image"
 	@echo "  dev           - Start development environment with hot reload"
+	@echo "  debug         - Start debug environment with Delve for GoLand"
+	@echo "  debug-down    - Stop debug environment"
+	@echo "  debug-logs    - View debug container logs"
 	@echo "  env-setup     - Set up environment configuration from template"
 	@echo "  env-check     - Validate docker-compose configuration"
 	@echo "  compile-check - Check Go compilation"
@@ -59,6 +62,25 @@ docker-build:
 dev:
 	@echo "Starting development environment with configuration from .env file..."
 	docker-compose -f docker-compose.dev.yml up -d
+
+# Start debug environment with Delve debugger (uses .env file)
+debug:
+	@echo "Starting debug environment with Delve debugger..."
+	@echo "After containers start, use 'Debug in Docker' run configuration in GoLand"
+	docker-compose -f docker-compose.debug.yml up -d
+	@echo "Waiting for debugger to be ready..."
+	@sleep 3
+	@echo "✅ Debug environment ready. Delve listening on localhost:2345"
+	@echo "📝 Click 'Debug' in GoLand to attach the debugger"
+
+# Stop debug environment
+debug-down:
+	@echo "Stopping debug environment..."
+	docker-compose -f docker-compose.debug.yml down
+
+# View debug container logs
+debug-logs:
+	docker-compose -f docker-compose.debug.yml logs -f app-debug
 
 # Run linters
 lint:

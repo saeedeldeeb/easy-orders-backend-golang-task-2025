@@ -216,7 +216,7 @@ func (s *productService) DeleteProduct(ctx context.Context, id string) error {
 }
 
 func (s *productService) ListProducts(ctx context.Context, req ListProductsRequest) (*ListProductsResponse, error) {
-	s.logger.Debug("Listing products", "offset", req.Offset, "limit", req.Limit)
+	s.logger.Debug("Listing products", "page", req.Page, "limit", req.Limit)
 
 	// Set default limit if isn't provided
 	limit := req.Limit
@@ -224,10 +224,14 @@ func (s *productService) ListProducts(ctx context.Context, req ListProductsReque
 		limit = 20 // Default limit
 	}
 
-	offset := req.Offset
-	if offset < 0 {
-		offset = 0
+	// Set default page to 1 if not provided or invalid
+	page := req.Page
+	if page < 1 {
+		page = 1
 	}
+
+	// Calculate offset from page number
+	offset := (page - 1) * limit
 
 	// Get paginated products
 	var products []*models.Product
@@ -280,7 +284,7 @@ func (s *productService) ListProducts(ctx context.Context, req ListProductsReque
 
 	return &ListProductsResponse{
 		Products: productResponses,
-		Offset:   offset,
+		Page:     page,
 		Limit:    limit,
 		Total:    int(totalCount),
 	}, nil
@@ -299,10 +303,14 @@ func (s *productService) SearchProducts(ctx context.Context, req SearchProductsR
 		limit = 20 // Default limit
 	}
 
-	offset := req.Offset
-	if offset < 0 {
-		offset = 0
+	// Set default page to 1 if not provided or invalid
+	page := req.Page
+	if page < 1 {
+		page = 1
 	}
+
+	// Calculate offset from page number
+	offset := (page - 1) * limit
 
 	// Get search results
 	products, err := s.productRepo.Search(ctx, req.Query, offset, limit)
@@ -341,7 +349,7 @@ func (s *productService) SearchProducts(ctx context.Context, req SearchProductsR
 
 	return &ListProductsResponse{
 		Products: productResponses,
-		Offset:   offset,
+		Page:     page,
 		Limit:    limit,
 		Total:    int(totalCount),
 	}, nil

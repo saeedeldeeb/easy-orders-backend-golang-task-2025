@@ -174,16 +174,16 @@ type UpdateProductRequest struct {
 }
 
 type ListProductsRequest struct {
-	Offset     int    `json:"offset"`
-	Limit      int    `json:"limit"`
-	CategoryID string `json:"category_id,omitempty"`
-	ActiveOnly bool   `json:"active_only,omitempty"`
+	Page       int    `json:"page" form:"page"`
+	Limit      int    `json:"limit" form:"limit"`
+	CategoryID string `json:"category_id,omitempty" form:"category_id"`
+	ActiveOnly bool   `json:"active_only,omitempty" form:"active_only"`
 }
 
 type SearchProductsRequest struct {
-	Query  string `json:"query" validate:"required"`
-	Offset int    `json:"offset"`
-	Limit  int    `json:"limit"`
+	Query string `json:"query" form:"query" validate:"required"`
+	Page  int    `json:"page" form:"page"`
+	Limit int    `json:"limit" form:"limit"`
 }
 
 type ProductResponse struct {
@@ -199,7 +199,7 @@ type ProductResponse struct {
 
 type ListProductsResponse struct {
 	Products []*ProductResponse `json:"products"`
-	Offset   int                `json:"offset"`
+	Page     int                `json:"page"`
 	Limit    int                `json:"limit"`
 	Total    int                `json:"total"`
 }
@@ -217,9 +217,9 @@ type OrderItem struct {
 }
 
 type ListOrdersRequest struct {
-	Offset int                `json:"offset"`
-	Limit  int                `json:"limit"`
-	Status models.OrderStatus `json:"status,omitempty"`
+	Page   int                `json:"page" form:"page"`
+	Limit  int                `json:"limit" form:"limit"`
+	Status models.OrderStatus `json:"status,omitempty" form:"status"`
 }
 
 type OrderResponse struct {
@@ -232,7 +232,7 @@ type OrderResponse struct {
 
 type ListOrdersResponse struct {
 	Orders []*OrderResponse `json:"orders"`
-	Offset int              `json:"offset"`
+	Page   int              `json:"page"`
 	Limit  int              `json:"limit"`
 	Total  int              `json:"total"`
 }
