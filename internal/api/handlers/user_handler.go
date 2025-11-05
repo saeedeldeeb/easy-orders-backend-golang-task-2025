@@ -33,7 +33,7 @@ func NewUserHandler(userService services.UserService, logger *logger.Logger) *Us
 // @Accept json
 // @Produce json
 // @Param user body services.CreateUserRequest true "User registration details"
-// @Success 201 {object} models.User "User created successfully"
+// @Success 201 {object} services.UserResponse "User created successfully"
 // @Failure 400 {object} map[string]interface{} "Invalid request body or validation error"
 // @Failure 409 {object} map[string]interface{} "User already exists"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
@@ -79,7 +79,7 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path string true "User ID"
-// @Success 200 {object} models.User "User details"
+// @Success 200 {object} services.UserResponse "User details"
 // @Failure 400 {object} map[string]interface{} "Invalid user ID"
 // @Failure 404 {object} map[string]interface{} "User not found"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
@@ -118,7 +118,7 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 // @Produce json
 // @Param id path string true "User ID"
 // @Param user body services.UpdateUserRequest true "Updated user details"
-// @Success 200 {object} models.User "User updated successfully"
+// @Success 200 {object} services.UserResponse "User updated successfully"
 // @Failure 400 {object} map[string]interface{} "Invalid request"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
 // @Security BearerAuth
@@ -154,7 +154,7 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param credentials body object{email=string,password=string} true "Login credentials"
-// @Success 200 {object} object{token=string,user=models.User} "Authentication successful"
+// @Success 200 {object} services.AuthResponse "Authentication successful"
 // @Failure 400 {object} map[string]interface{} "Invalid request body"
 // @Failure 401 {object} map[string]interface{} "Invalid credentials"
 // @Router /auth/login [post]

@@ -31,7 +31,7 @@ func NewPaymentHandler(paymentService services.PaymentService, logger *logger.Lo
 // @Accept json
 // @Produce json
 // @Param payment body services.ProcessPaymentRequest true "Payment details"
-// @Success 201 {object} map[string]interface{} "Payment processed successfully"
+// @Success 201 {object} object{message=string,data=services.PaymentResponse} "Payment processed successfully"
 // @Failure 400 {object} map[string]interface{} "Invalid request"
 // @Failure 404 {object} map[string]interface{} "Order not found"
 // @Failure 409 {object} map[string]interface{} "Order already paid"
@@ -106,7 +106,7 @@ func (h *PaymentHandler) ProcessPayment(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path string true "Payment ID"
-// @Success 200 {object} map[string]interface{} "Payment details"
+// @Success 200 {object} object{data=services.PaymentResponse} "Payment details"
 // @Failure 400 {object} map[string]interface{} "Invalid payment ID"
 // @Failure 404 {object} map[string]interface{} "Payment not found"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
@@ -155,7 +155,7 @@ func (h *PaymentHandler) GetPayment(c *gin.Context) {
 // @Produce json
 // @Param id path string true "Payment ID"
 // @Param refund body object{amount=number} true "Refund amount"
-// @Success 201 {object} map[string]interface{} "Refund processed successfully"
+// @Success 201 {object} object{message=string,data=services.PaymentResponse} "Refund processed successfully"
 // @Failure 400 {object} map[string]interface{} "Invalid request"
 // @Failure 404 {object} map[string]interface{} "Payment not found"
 // @Failure 409 {object} map[string]interface{} "Payment cannot be refunded"
@@ -239,7 +239,7 @@ func (h *PaymentHandler) RefundPayment(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param order_id path string true "Order ID"
-// @Success 200 {object} map[string]interface{} "Order payments"
+// @Success 200 {object} object{data=[]services.PaymentResponse} "Order payments"
 // @Failure 400 {object} map[string]interface{} "Invalid order ID"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
 // @Security BearerAuth

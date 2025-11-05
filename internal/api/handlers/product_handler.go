@@ -32,7 +32,7 @@ func NewProductHandler(productService services.ProductService, logger *logger.Lo
 // @Accept json
 // @Produce json
 // @Param product body services.CreateProductRequest true "Product details"
-// @Success 201 {object} map[string]interface{} "Product created successfully"
+// @Success 201 {object} object{message=string,data=services.ProductResponse} "Product created successfully"
 // @Failure 400 {object} map[string]interface{} "Invalid request"
 // @Failure 409 {object} map[string]interface{} "Product already exists"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
@@ -91,7 +91,7 @@ func (h *ProductHandler) CreateProduct(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path string true "Product ID"
-// @Success 200 {object} map[string]interface{} "Product details"
+// @Success 200 {object} object{data=services.ProductResponse} "Product details"
 // @Failure 400 {object} map[string]interface{} "Invalid product ID"
 // @Failure 404 {object} map[string]interface{} "Product not found"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
@@ -140,7 +140,7 @@ func (h *ProductHandler) GetProduct(c *gin.Context) {
 // @Produce json
 // @Param id path string true "Product ID"
 // @Param product body services.UpdateProductRequest true "Updated product details"
-// @Success 200 {object} map[string]interface{} "Product updated successfully"
+// @Success 200 {object} object{message=string,data=services.ProductResponse} "Product updated successfully"
 // @Failure 400 {object} map[string]interface{} "Invalid request"
 // @Failure 404 {object} map[string]interface{} "Product not found"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
@@ -202,7 +202,7 @@ func (h *ProductHandler) UpdateProduct(c *gin.Context) {
 // @Param limit query int false "Limit for pagination" default(10)
 // @Param category_id query string false "Filter by category ID"
 // @Param active_only query boolean false "Show only active products" default(false)
-// @Success 200 {object} map[string]interface{} "List of products"
+// @Success 200 {object} object{data=services.ListProductsResponse} "List of products"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
 // @Security BearerAuth
 // @Router /products [get]

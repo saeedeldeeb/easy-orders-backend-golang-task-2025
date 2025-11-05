@@ -41,7 +41,7 @@ func NewAdminHandler(
 // @Param offset query int false "Offset for pagination" default(0)
 // @Param limit query int false "Limit for pagination" default(10)
 // @Param status query string false "Filter by order status"
-// @Success 200 {object} map[string]interface{} "List of all orders"
+// @Success 200 {object} object{data=services.ListOrdersResponse} "List of all orders"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
 // @Security BearerAuth
 // @Router /admin/orders [get]
@@ -94,7 +94,7 @@ func (h *AdminHandler) GetAllOrders(c *gin.Context) {
 // @Produce json
 // @Param id path string true "Order ID"
 // @Param status body object{status=string} true "New order status"
-// @Success 200 {object} map[string]interface{} "Order status updated"
+// @Success 200 {object} object{message=string,data=services.OrderResponse} "Order status updated"
 // @Failure 400 {object} map[string]interface{} "Invalid request"
 // @Failure 404 {object} map[string]interface{} "Order not found"
 // @Failure 409 {object} map[string]interface{} "Invalid status transition"
@@ -163,7 +163,7 @@ func (h *AdminHandler) UpdateOrderStatus(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param date query string false "Date in YYYY-MM-DD format"
-// @Success 200 {object} map[string]interface{} "Daily sales report"
+// @Success 200 {object} object{data=services.SalesReportResponse} "Daily sales report"
 // @Failure 400 {object} map[string]interface{} "Invalid date format"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
 // @Security BearerAuth

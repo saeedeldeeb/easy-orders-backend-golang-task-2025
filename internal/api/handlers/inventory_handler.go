@@ -33,7 +33,7 @@ func NewInventoryHandler(inventoryService services.InventoryService, logger *log
 // @Produce json
 // @Param id path string true "Product ID"
 // @Param quantity query int true "Quantity to check"
-// @Success 200 {object} map[string]interface{} "Availability status"
+// @Success 200 {object} object{data=object{product_id=string,quantity=int,available=bool}} "Availability status"
 // @Failure 400 {object} map[string]interface{} "Invalid request"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
 // @Security BearerAuth
@@ -100,7 +100,7 @@ func (h *InventoryHandler) CheckAvailability(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param threshold query int false "Stock threshold" default(10)
-// @Success 200 {object} map[string]interface{} "Low stock products"
+// @Success 200 {object} object{data=services.LowStockResponse} "Low stock products"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
 // @Security BearerAuth
 // @Router /admin/inventory/low-stock [get]

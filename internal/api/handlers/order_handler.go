@@ -33,7 +33,7 @@ func NewOrderHandler(orderService services.OrderService, logger *logger.Logger) 
 // @Accept json
 // @Produce json
 // @Param order body services.CreateOrderRequest true "Order details"
-// @Success 201 {object} map[string]interface{} "Order created successfully"
+// @Success 201 {object} object{message=string,data=services.OrderResponse} "Order created successfully"
 // @Failure 400 {object} map[string]interface{} "Invalid request"
 // @Failure 404 {object} map[string]interface{} "User or product not found"
 // @Failure 409 {object} map[string]interface{} "Insufficient stock"
@@ -110,7 +110,7 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path string true "Order ID"
-// @Success 200 {object} map[string]interface{} "Order details"
+// @Success 200 {object} object{data=services.OrderResponse} "Order details"
 // @Failure 400 {object} map[string]interface{} "Invalid order ID"
 // @Failure 404 {object} map[string]interface{} "Order not found"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
@@ -158,7 +158,7 @@ func (h *OrderHandler) GetOrder(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path string true "Order ID"
-// @Success 200 {object} map[string]interface{} "Order status"
+// @Success 200 {object} object{status=models.OrderStatus} "Order status"
 // @Failure 400 {object} map[string]interface{} "Invalid order ID"
 // @Failure 404 {object} map[string]interface{} "Order not found"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
@@ -264,7 +264,7 @@ func (h *OrderHandler) CancelOrder(c *gin.Context) {
 // @Param offset query int false "Offset for pagination" default(0)
 // @Param limit query int false "Limit for pagination" default(10)
 // @Param status query string false "Filter by order status"
-// @Success 200 {object} map[string]interface{} "List of orders"
+// @Success 200 {object} object{data=services.ListOrdersResponse} "List of orders"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
 // @Security BearerAuth
 // @Router /orders [get]
