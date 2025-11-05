@@ -4,14 +4,13 @@ import (
 	"context"
 	"time"
 
-	"easy-orders-backend/internal/services"
 	"easy-orders-backend/pkg/logger"
 	"easy-orders-backend/pkg/payments"
 
 	"go.uber.org/fx"
 )
 
-// PaymentsModule provides enhanced payment processing dependencies
+// PaymentsModule provides payment processing infrastructure dependencies
 var PaymentsModule = fx.Module("payments",
 	fx.Provide(
 		// Payment gateway manager
@@ -24,9 +23,6 @@ var PaymentsModule = fx.Module("payments",
 
 		// Circuit breaker manager
 		payments.NewCircuitBreakerManager,
-
-		// Enhanced payment service
-		services.NewEnhancedPaymentService,
 	),
 
 	// Decorate the gateway manager to register mock gateways

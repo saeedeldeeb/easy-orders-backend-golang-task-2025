@@ -1,0 +1,46 @@
+# Git
+.git
+.gitignore
+
+# Temporary and build artifacts
+tmp/
+*.log
+build-errors.log
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test files
+*_test.go
+testdata/
+tests/
+coverage.txt
+*.out
+
+# Documentation (will be generated in container)
+# Note: We keep docs/ included so swagger can be regenerated
+# but exclude other markdown files
+README.md
+*.md
+!docs/README.md
+
+# Environment files (use .env.example instead)
+.env
+.env.local
+
+# Dependencies (will be downloaded in container)
+vendor/
+
+# Docker files (not needed in container)
+docker-compose.yml
+docker-compose.dev.yml
+Dockerfile
+docker/Dockerfile.dev

@@ -12,7 +12,7 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/swaggo/files v1.0.0
 	github.com/swaggo/gin-swagger v1.5.3
-	github.com/swaggo/swag v1.8.10
+	github.com/swaggo/swag v1.16.4
 	go.uber.org/fx v1.24.0
 	go.uber.org/zap v1.27.0
 	golang.org/x/crypto v0.40.0

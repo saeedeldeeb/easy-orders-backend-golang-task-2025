@@ -1,7 +1,6 @@
 package fx
 
 import (
-	"easy-orders-backend/internal/services"
 	"easy-orders-backend/pkg/logger"
 	"easy-orders-backend/pkg/notifications"
 
@@ -20,9 +19,6 @@ var NotificationsModule = fx.Module("notifications",
 			}
 			return notifications.NewNotificationDispatcher(config, provider, logger)
 		},
-
-		// Enhanced notification service
-		services.NewEnhancedNotificationService,
 
 		// Default dispatcher config
 		func() *notifications.DispatcherConfig {

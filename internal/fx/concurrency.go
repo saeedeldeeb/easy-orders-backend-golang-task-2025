@@ -1,7 +1,6 @@
 package fx
 
 import (
-	"easy-orders-backend/internal/services"
 	"easy-orders-backend/pkg/concurrency"
 
 	"go.uber.org/fx"
@@ -18,11 +17,5 @@ var ConcurrencyModule = fx.Module("concurrency",
 
 		// Lock manager
 		concurrency.NewLockManager,
-
-		// Enhanced inventory service
-		fx.Annotate(
-			services.NewEnhancedInventoryService,
-			fx.As(new(services.EnhancedInventoryService)),
-		),
 	),
 )
