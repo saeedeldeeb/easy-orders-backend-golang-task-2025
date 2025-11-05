@@ -57,7 +57,7 @@ type EnhancedInventoryService interface {
 	ProcessHighVolumeOrders(ctx context.Context, orders []HighVolumeOrder, workerCount int) (*HighVolumeProcessingResult, error)
 }
 
-// High-volume processing types
+// HighVolumeOrder High-volume processing types
 type HighVolumeOrder struct {
 	OrderID   string `json:"order_id"`
 	ProductID string `json:"product_id"`
@@ -112,7 +112,7 @@ type OrderPipelineService interface {
 	ProcessOrderAsync(ctx context.Context, req CreateOrderRequest) (<-chan *OrderPipelineResult, error)
 }
 
-// Request/Response structs
+// CreateUserRequest Request/Response structs
 type CreateUserRequest struct {
 	Email    string `json:"email" validate:"required,email"`
 	Password string `json:"password" validate:"required,min=8"`
@@ -120,7 +120,7 @@ type CreateUserRequest struct {
 }
 
 type UpdateUserRequest struct {
-	Name  *string `json:"name,omitempty"`
+	Name  *string `json:"name,omitempty" validate:"omitempty,min=1"`
 	Email *string `json:"email,omitempty" validate:"omitempty,email"`
 }
 
@@ -286,7 +286,7 @@ type NotificationResponse struct {
 	ReadAt  *time.Time `json:"read_at,omitempty"`
 }
 
-// Report Service DTOs
+// GenerateSalesReportRequest Report Service DTOs
 type GenerateSalesReportRequest struct {
 	StartDate string `json:"start_date"`
 	EndDate   string `json:"end_date"`
@@ -364,7 +364,7 @@ type ProductInventoryItem struct {
 	Status        string  `json:"status"`
 }
 
-// TopProductsResponse represents the response for top products report
+// TopProductsResponse represents the response for the top products report
 type TopProductsResponse struct {
 	TopProducts []*TopProductItem `json:"top_products"`
 	Limit       int               `json:"limit"`

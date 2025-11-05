@@ -2,11 +2,11 @@ package handlers
 
 import (
 	"net/http"
-	"strconv"
 	"strings"
 
-	"easy-orders-backend/internal/models"
+	"easy-orders-backend/internal/api/middleware"
 	"easy-orders-backend/internal/services"
+	"easy-orders-backend/pkg/errors"
 	"easy-orders-backend/pkg/logger"
 
 	"github.com/gin-gonic/gin"
@@ -43,15 +43,17 @@ func NewOrderHandler(orderService services.OrderService, logger *logger.Logger) 
 func (h *OrderHandler) CreateOrder(c *gin.Context) {
 	h.logger.Debug("Creating order via API")
 
-	var req services.CreateOrderRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		h.logger.Error("Failed to bind order creation request", "error", err)
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error":   "Invalid request format",
-			"details": err.Error(),
-		})
+	// Get validated request from context
+	validatedReq, exists := middleware.GetValidatedRequest(c)
+	if !exists {
+		h.logger.Error("Validated request not found in context")
+		appErr := errors.NewValidationError("Request validation failed")
+		middleware.AbortWithError(c, appErr)
 		return
 	}
+
+	// Type assert to the expected request type
+	req := *validatedReq.(*services.CreateOrderRequest)
 
 	// Call service
 	order, err := h.orderService.CreateOrder(c.Request.Context(), req)
@@ -117,15 +119,9 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 // @Security BearerAuth
 // @Router /orders/{id} [get]
 func (h *OrderHandler) GetOrder(c *gin.Context) {
+	// Path parameter validation is done by middleware
 	orderID := c.Param("id")
 	h.logger.Debug("Getting order via API", "id", orderID)
-
-	if orderID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Order ID is required",
-		})
-		return
-	}
 
 	// Call service
 	order, err := h.orderService.GetOrder(c.Request.Context(), orderID)
@@ -165,15 +161,9 @@ func (h *OrderHandler) GetOrder(c *gin.Context) {
 // @Security BearerAuth
 // @Router /orders/{id}/status [get]
 func (h *OrderHandler) GetOrderStatus(c *gin.Context) {
+	// Path parameter validation is done by middleware
 	orderID := c.Param("id")
 	h.logger.Debug("Getting order status via API", "id", orderID)
-
-	if orderID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Order ID is required",
-		})
-		return
-	}
 
 	// Call service to get order
 	order, err := h.orderService.GetOrder(c.Request.Context(), orderID)
@@ -214,15 +204,9 @@ func (h *OrderHandler) GetOrderStatus(c *gin.Context) {
 // @Security BearerAuth
 // @Router /orders/{id}/cancel [patch]
 func (h *OrderHandler) CancelOrder(c *gin.Context) {
+	// Path parameter validation is done by middleware
 	orderID := c.Param("id")
 	h.logger.Debug("Cancelling order via API", "id", orderID)
-
-	if orderID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Order ID is required",
-		})
-		return
-	}
 
 	// Call service
 	err := h.orderService.CancelOrder(c.Request.Context(), orderID)
@@ -271,27 +255,16 @@ func (h *OrderHandler) CancelOrder(c *gin.Context) {
 func (h *OrderHandler) ListOrders(c *gin.Context) {
 	h.logger.Debug("Listing orders via API")
 
-	// Parse query parameters
-	var req services.ListOrdersRequest
-
-	// Parse offset
-	if offsetStr := c.Query("offset"); offsetStr != "" {
-		if offset, err := strconv.Atoi(offsetStr); err == nil {
-			req.Offset = offset
-		}
+	// Get validated query from context
+	validatedQuery, exists := middleware.GetValidatedQuery(c)
+	if !exists {
+		h.logger.Error("Validated query not found in context")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Request validation failed"})
+		return
 	}
 
-	// Parse limit
-	if limitStr := c.Query("limit"); limitStr != "" {
-		if limit, err := strconv.Atoi(limitStr); err == nil {
-			req.Limit = limit
-		}
-	}
-
-	// Parse status filter
-	if status := c.Query("status"); status != "" {
-		req.Status = models.OrderStatus(status)
-	}
+	// Type assert to the expected request type
+	req := *validatedQuery.(*services.ListOrdersRequest)
 
 	// Call service
 	response, err := h.orderService.ListOrders(c.Request.Context(), req)

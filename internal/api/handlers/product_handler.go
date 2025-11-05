@@ -2,10 +2,11 @@ package handlers
 
 import (
 	"net/http"
-	"strconv"
 	"strings"
 
+	"easy-orders-backend/internal/api/middleware"
 	"easy-orders-backend/internal/services"
+	"easy-orders-backend/pkg/errors"
 	"easy-orders-backend/pkg/logger"
 
 	"github.com/gin-gonic/gin"
@@ -41,15 +42,17 @@ func NewProductHandler(productService services.ProductService, logger *logger.Lo
 func (h *ProductHandler) CreateProduct(c *gin.Context) {
 	h.logger.Debug("Creating product via API")
 
-	var req services.CreateProductRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		h.logger.Error("Failed to bind product creation request", "error", err)
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error":   "Invalid request format",
-			"details": err.Error(),
-		})
+	// Get validated request from context
+	validatedReq, exists := middleware.GetValidatedRequest(c)
+	if !exists {
+		h.logger.Error("Validated request not found in context")
+		appErr := errors.NewValidationError("Request validation failed")
+		middleware.AbortWithError(c, appErr)
 		return
 	}
+
+	// Type assert to the expected request type
+	req := *validatedReq.(*services.CreateProductRequest)
 
 	// Call service
 	product, err := h.productService.CreateProduct(c.Request.Context(), req)
@@ -98,15 +101,9 @@ func (h *ProductHandler) CreateProduct(c *gin.Context) {
 // @Security BearerAuth
 // @Router /products/{id} [get]
 func (h *ProductHandler) GetProduct(c *gin.Context) {
+	// Path parameter validation is done by middleware
 	productID := c.Param("id")
 	h.logger.Debug("Getting product via API", "id", productID)
-
-	if productID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Product ID is required",
-		})
-		return
-	}
 
 	// Call service
 	product, err := h.productService.GetProduct(c.Request.Context(), productID)
@@ -147,25 +144,21 @@ func (h *ProductHandler) GetProduct(c *gin.Context) {
 // @Security BearerAuth
 // @Router /products/{id} [put]
 func (h *ProductHandler) UpdateProduct(c *gin.Context) {
+	// Path parameter validation is done by middleware
 	productID := c.Param("id")
 	h.logger.Debug("Updating product via API", "id", productID)
 
-	if productID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Product ID is required",
-		})
+	// Get validated request from context
+	validatedReq, exists := middleware.GetValidatedRequest(c)
+	if !exists {
+		h.logger.Error("Validated request not found in context")
+		appErr := errors.NewValidationError("Request validation failed")
+		middleware.AbortWithError(c, appErr)
 		return
 	}
 
-	var req services.UpdateProductRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		h.logger.Error("Failed to bind product update request", "error", err)
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error":   "Invalid request format",
-			"details": err.Error(),
-		})
-		return
-	}
+	// Type assert to the expected request type
+	req := *validatedReq.(*services.UpdateProductRequest)
 
 	// Call service
 	product, err := h.productService.UpdateProduct(c.Request.Context(), productID, req)
@@ -209,32 +202,16 @@ func (h *ProductHandler) UpdateProduct(c *gin.Context) {
 func (h *ProductHandler) ListProducts(c *gin.Context) {
 	h.logger.Debug("Listing products via API")
 
-	// Parse query parameters
-	var req services.ListProductsRequest
-
-	// Parse offset
-	if offsetStr := c.Query("offset"); offsetStr != "" {
-		if offset, err := strconv.Atoi(offsetStr); err == nil {
-			req.Offset = offset
-		}
+	// Get validated query from context
+	validatedQuery, exists := middleware.GetValidatedQuery(c)
+	if !exists {
+		h.logger.Error("Validated query not found in context")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Request validation failed"})
+		return
 	}
 
-	// Parse limit
-	if limitStr := c.Query("limit"); limitStr != "" {
-		if limit, err := strconv.Atoi(limitStr); err == nil {
-			req.Limit = limit
-		}
-	}
-
-	// Parse category filter
-	if categoryID := c.Query("category_id"); categoryID != "" {
-		req.CategoryID = categoryID
-	}
-
-	// Parse active only filter
-	if activeOnlyStr := c.Query("active_only"); activeOnlyStr != "" {
-		req.ActiveOnly = activeOnlyStr == "true"
-	}
+	// Type assert to the expected request type
+	req := *validatedQuery.(*services.ListProductsRequest)
 
 	// Call service
 	response, err := h.productService.ListProducts(c.Request.Context(), req)

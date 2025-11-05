@@ -35,6 +35,7 @@ func NewGinEngine(
 	authMiddleware *middleware2.AuthMiddleware,
 	corsMiddleware *middleware2.CORSMiddleware,
 	rateLimiter *middleware2.RateLimiter,
+	validationMiddleware *middleware2.ValidationMiddleware,
 	userHandler *handlers.UserHandler,
 	productHandler *handlers.ProductHandler,
 	orderHandler *handlers.OrderHandler,
@@ -87,15 +88,15 @@ func NewGinEngine(
 	v1 := engine.Group("/api/v1")
 	{
 		// Public routes (no authentication required)
-		routes.RegisterUserRoutes(v1, userHandler) // Includes auth endpoint
+		routes.RegisterUserRoutes(v1, userHandler, validationMiddleware) // Includes auth endpoint
 
 		// Protected routes (require authentication)
 		protected := v1.Group("")
 		protected.Use(authMiddleware.RequireAuth())
 		{
-			routes.RegisterProductRoutes(protected, productHandler, inventoryHandler)
-			routes.RegisterOrderRoutes(protected, orderHandler)
-			routes.RegisterPaymentRoutes(protected, paymentHandler)
+			routes.RegisterProductRoutes(protected, productHandler, inventoryHandler, validationMiddleware)
+			routes.RegisterOrderRoutes(protected, orderHandler, validationMiddleware)
+			routes.RegisterPaymentRoutes(protected, paymentHandler, validationMiddleware)
 		}
 
 		// Admin routes (require admin role)
@@ -103,7 +104,7 @@ func NewGinEngine(
 		admin.Use(authMiddleware.RequireAuth())
 		admin.Use(authMiddleware.RequireAdmin())
 		{
-			routes.RegisterAdminRoutes(admin, adminHandler, inventoryHandler)
+			routes.RegisterAdminRoutes(admin, adminHandler, inventoryHandler, validationMiddleware)
 		}
 
 		// Health check under API version

@@ -39,13 +39,17 @@ func NewUserHandler(userService services.UserService, logger *logger.Logger) *Us
 // @Failure 500 {object} map[string]interface{} "Internal server error"
 // @Router /users [post]
 func (h *UserHandler) CreateUser(c *gin.Context) {
-	var req services.CreateUserRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		h.logger.Error("Failed to bind create user request", "error", err)
-		appErr := errors.NewValidationErrorWithDetails("Invalid request body", err.Error())
+	// Get validated request from context
+	validatedReq, exists := middleware.GetValidatedRequest(c)
+	if !exists {
+		h.logger.Error("Validated request not found in context")
+		appErr := errors.NewValidationError("Request validation failed")
 		middleware.AbortWithError(c, appErr)
 		return
 	}
+
+	// Type assert to the expected request type
+	req := *validatedReq.(*services.CreateUserRequest)
 
 	user, err := h.userService.CreateUser(c.Request.Context(), req)
 	if err != nil {
@@ -86,11 +90,8 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 // @Security BearerAuth
 // @Router /users/{id} [get]
 func (h *UserHandler) GetUser(c *gin.Context) {
+	// Path parameter validation is done by middleware
 	id := c.Param("id")
-	if id == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "User ID is required"})
-		return
-	}
 
 	user, err := h.userService.GetUser(c.Request.Context(), id)
 	if err != nil {
@@ -124,18 +125,20 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 // @Security BearerAuth
 // @Router /users/{id} [put]
 func (h *UserHandler) UpdateUser(c *gin.Context) {
+	// Path parameter validation is done by middleware
 	id := c.Param("id")
-	if id == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "User ID is required"})
+
+	// Get validated request from context
+	validatedReq, exists := middleware.GetValidatedRequest(c)
+	if !exists {
+		h.logger.Error("Validated request not found in context")
+		appErr := errors.NewValidationError("Request validation failed")
+		middleware.AbortWithError(c, appErr)
 		return
 	}
 
-	var req services.UpdateUserRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		h.logger.Error("Failed to bind update user request", "error", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
-		return
-	}
+	// Type assert to the expected request type
+	req := *validatedReq.(*services.UpdateUserRequest)
 
 	user, err := h.userService.UpdateUser(c.Request.Context(), id, req)
 	if err != nil {
@@ -159,16 +162,22 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 // @Failure 401 {object} map[string]interface{} "Invalid credentials"
 // @Router /auth/login [post]
 func (h *UserHandler) AuthenticateUser(c *gin.Context) {
-	var req struct {
-		Email    string `json:"email" binding:"required,email"`
-		Password string `json:"password" binding:"required"`
+	// Define inline struct matching the one in routes
+	type LoginRequest struct {
+		Email    string `json:"email" validate:"required,email"`
+		Password string `json:"password" validate:"required,min=8"`
 	}
 
-	if err := c.ShouldBindJSON(&req); err != nil {
-		h.logger.Error("Failed to bind login request", "error", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+	// Get validated request from context
+	validatedReq, exists := middleware.GetValidatedRequest(c)
+	if !exists {
+		h.logger.Error("Validated request not found in context")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Request validation failed"})
 		return
 	}
+
+	// Type assert to the expected request type
+	req := *validatedReq.(*LoginRequest)
 
 	auth, err := h.userService.AuthenticateUser(c.Request.Context(), req.Email, req.Password)
 	if err != nil {

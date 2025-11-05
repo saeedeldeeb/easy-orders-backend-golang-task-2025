@@ -2,11 +2,12 @@ package handlers
 
 import (
 	"net/http"
-	"strconv"
 	"strings"
 
+	"easy-orders-backend/internal/api/middleware"
 	"easy-orders-backend/internal/models"
 	"easy-orders-backend/internal/services"
+	"easy-orders-backend/pkg/errors"
 	"easy-orders-backend/pkg/logger"
 
 	"github.com/gin-gonic/gin"
@@ -48,27 +49,16 @@ func NewAdminHandler(
 func (h *AdminHandler) GetAllOrders(c *gin.Context) {
 	h.logger.Debug("Getting all orders via admin API")
 
-	// Parse query parameters
-	var req services.ListOrdersRequest
-
-	// Parse offset
-	if offsetStr := c.Query("offset"); offsetStr != "" {
-		if offset, err := strconv.Atoi(offsetStr); err == nil {
-			req.Offset = offset
-		}
+	// Get validated query from context
+	validatedQuery, exists := middleware.GetValidatedQuery(c)
+	if !exists {
+		h.logger.Error("Validated query not found in context")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Request validation failed"})
+		return
 	}
 
-	// Parse limit
-	if limitStr := c.Query("limit"); limitStr != "" {
-		if limit, err := strconv.Atoi(limitStr); err == nil {
-			req.Limit = limit
-		}
-	}
-
-	// Parse status filter
-	if status := c.Query("status"); status != "" {
-		req.Status = models.OrderStatus(status)
-	}
+	// Type assert to the expected request type
+	req := *validatedQuery.(*services.ListOrdersRequest)
 
 	// Call service
 	response, err := h.orderService.ListOrders(c.Request.Context(), req)
@@ -102,29 +92,28 @@ func (h *AdminHandler) GetAllOrders(c *gin.Context) {
 // @Security BearerAuth
 // @Router /admin/orders/{id}/status [patch]
 func (h *AdminHandler) UpdateOrderStatus(c *gin.Context) {
+	// Path parameter validation is done by middleware
 	orderID := c.Param("id")
 	h.logger.Debug("Updating order status via admin API", "id", orderID)
 
-	if orderID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Order ID is required",
-		})
+	// Define inline struct matching the one in routes
+	type UpdateStatusRequest struct {
+		Status string `json:"status" validate:"required"`
+	}
+
+	// Get validated request from context
+	validatedReq, exists := middleware.GetValidatedRequest(c)
+	if !exists {
+		h.logger.Error("Validated request not found in context")
+		appErr := errors.NewValidationError("Request validation failed")
+		middleware.AbortWithError(c, appErr)
 		return
 	}
 
-	var req struct {
-		Status string `json:"status" binding:"required"`
-	}
-	if err := c.ShouldBindJSON(&req); err != nil {
-		h.logger.Error("Failed to bind order status update request", "error", err)
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error":   "Invalid request format",
-			"details": err.Error(),
-		})
-		return
-	}
+	// Type assert to the expected request type
+	req := *validatedReq.(*UpdateStatusRequest)
 
-	// Call service (reuse order service functionality)
+	// Call service (cast string to OrderStatus type)
 	order, err := h.orderService.UpdateOrderStatus(c.Request.Context(), orderID, models.OrderStatus(req.Status))
 	if err != nil {
 		h.logger.Error("Failed to update order status via admin", "error", err, "id", orderID, "status", req.Status)
@@ -171,12 +160,26 @@ func (h *AdminHandler) UpdateOrderStatus(c *gin.Context) {
 func (h *AdminHandler) GenerateDailySalesReport(c *gin.Context) {
 	h.logger.Debug("Generating daily sales report via admin API")
 
-	date := c.Query("date") // Format: YYYY-MM-DD
+	// Get validated query from context
+	validatedQuery, exists := middleware.GetValidatedQuery(c)
+	if !exists {
+		h.logger.Error("Validated query not found in context")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Request validation failed"})
+		return
+	}
+
+	// Define inline struct matching the one in routes
+	type DailySalesReportQuery struct {
+		Date string `form:"date"`
+	}
+
+	// Type assert to the expected request type
+	req := *validatedQuery.(*DailySalesReportQuery)
 
 	// Call service
-	report, err := h.reportService.GenerateDailySalesReport(c.Request.Context(), date)
+	report, err := h.reportService.GenerateDailySalesReport(c.Request.Context(), req.Date)
 	if err != nil {
-		h.logger.Error("Failed to generate daily sales report", "error", err, "date", date)
+		h.logger.Error("Failed to generate daily sales report", "error", err, "date", req.Date)
 
 		if strings.Contains(err.Error(), "invalid date format") {
 			c.JSON(http.StatusBadRequest, gin.H{

@@ -4,7 +4,9 @@ import (
 	"net/http"
 	"strings"
 
+	"easy-orders-backend/internal/api/middleware"
 	"easy-orders-backend/internal/services"
+	"easy-orders-backend/pkg/errors"
 	"easy-orders-backend/pkg/logger"
 
 	"github.com/gin-gonic/gin"
@@ -42,15 +44,17 @@ func NewPaymentHandler(paymentService services.PaymentService, logger *logger.Lo
 func (h *PaymentHandler) ProcessPayment(c *gin.Context) {
 	h.logger.Debug("Processing payment via API")
 
-	var req services.ProcessPaymentRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		h.logger.Error("Failed to bind payment request", "error", err)
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error":   "Invalid request format",
-			"details": err.Error(),
-		})
+	// Get validated request from context
+	validatedReq, exists := middleware.GetValidatedRequest(c)
+	if !exists {
+		h.logger.Error("Validated request not found in context")
+		appErr := errors.NewValidationError("Request validation failed")
+		middleware.AbortWithError(c, appErr)
 		return
 	}
+
+	// Type assert to the expected request type
+	req := *validatedReq.(*services.ProcessPaymentRequest)
 
 	// Call service
 	payment, err := h.paymentService.ProcessPayment(c.Request.Context(), req)
@@ -113,15 +117,9 @@ func (h *PaymentHandler) ProcessPayment(c *gin.Context) {
 // @Security BearerAuth
 // @Router /payments/{id} [get]
 func (h *PaymentHandler) GetPayment(c *gin.Context) {
+	// Path parameter validation is done by middleware
 	paymentID := c.Param("id")
 	h.logger.Debug("Getting payment via API", "id", paymentID)
-
-	if paymentID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Payment ID is required",
-		})
-		return
-	}
 
 	// Call service
 	payment, err := h.paymentService.GetPayment(c.Request.Context(), paymentID)
@@ -164,27 +162,25 @@ func (h *PaymentHandler) GetPayment(c *gin.Context) {
 // @Security BearerAuth
 // @Router /payments/{id}/refund [post]
 func (h *PaymentHandler) RefundPayment(c *gin.Context) {
+	// Path parameter validation is done by middleware
 	paymentID := c.Param("id")
 	h.logger.Debug("Processing refund via API", "payment_id", paymentID)
 
-	if paymentID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Payment ID is required",
-		})
+	// Define inline struct matching the one in routes
+	type RefundRequest struct {
+		Amount float64 `json:"amount" validate:"required,gt=0"`
+	}
+
+	// Get validated request from context
+	validatedReq, exists := middleware.GetValidatedRequest(c)
+	if !exists {
+		h.logger.Error("Validated request not found in context")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Request validation failed"})
 		return
 	}
 
-	var req struct {
-		Amount float64 `json:"amount" binding:"required,gt=0"`
-	}
-	if err := c.ShouldBindJSON(&req); err != nil {
-		h.logger.Error("Failed to bind refund request", "error", err)
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error":   "Invalid request format",
-			"details": err.Error(),
-		})
-		return
-	}
+	// Type assert to the expected request type
+	req := *validatedReq.(*RefundRequest)
 
 	// Call service
 	refund, err := h.paymentService.RefundPayment(c.Request.Context(), paymentID, req.Amount)
@@ -245,15 +241,9 @@ func (h *PaymentHandler) RefundPayment(c *gin.Context) {
 // @Security BearerAuth
 // @Router /orders/{order_id}/payments [get]
 func (h *PaymentHandler) GetOrderPayments(c *gin.Context) {
+	// Path parameter validation is done by middleware
 	orderID := c.Param("order_id")
 	h.logger.Debug("Getting order payments via API", "order_id", orderID)
-
-	if orderID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Order ID is required",
-		})
-		return
-	}
 
 	// Call service
 	payments, err := h.paymentService.GetOrderPayments(c.Request.Context(), orderID)
