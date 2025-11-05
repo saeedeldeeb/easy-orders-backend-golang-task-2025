@@ -24,7 +24,7 @@ type CORSConfig struct {
 	MaxAge           int
 }
 
-// NewCORSMiddleware creates a new CORS middleware
+// NewCORSMiddleware creates new CORS middleware
 func NewCORSMiddleware(logger *logger.Logger) *CORSMiddleware {
 	// Default configuration for development
 	config := CORSConfig{
@@ -131,7 +131,7 @@ func (c *CORSMiddleware) SetAllowOrigins(origins []string) {
 	c.config.AllowOrigins = origins
 }
 
-// SetAllowCredentials updates the allow credentials setting
+// SetAllowCredentials updates the allowed credentials setting
 func (c *CORSMiddleware) SetAllowCredentials(allow bool) {
 	c.config.AllowCredentials = allow
 }

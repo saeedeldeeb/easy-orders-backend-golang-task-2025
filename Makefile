@@ -63,6 +63,11 @@ dev:
 	@echo "Starting development environment with configuration from .env file..."
 	docker-compose -f docker-compose.dev.yml up -d
 
+# Stop development environment
+dev-down:
+	@echo "Stopping development environment..."
+	docker-compose -f docker-compose.dev.yml down
+
 # Start debug environment with Delve debugger (uses .env file)
 debug:
 	@echo "Starting debug environment with Delve debugger..."
