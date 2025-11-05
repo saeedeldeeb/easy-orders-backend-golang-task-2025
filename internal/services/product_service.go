@@ -218,7 +218,7 @@ func (s *productService) DeleteProduct(ctx context.Context, id string) error {
 func (s *productService) ListProducts(ctx context.Context, req ListProductsRequest) (*ListProductsResponse, error) {
 	s.logger.Debug("Listing products", "offset", req.Offset, "limit", req.Limit)
 
-	// Set default limit if not provided
+	// Set default limit if isn't provided
 	limit := req.Limit
 	if limit <= 0 || limit > 100 {
 		limit = 20 // Default limit

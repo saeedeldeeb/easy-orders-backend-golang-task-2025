@@ -210,7 +210,7 @@ func (h *ProductHandler) ListProducts(c *gin.Context) {
 		return
 	}
 
-	// Type assert to the expected request type
+	// Type asserts to the expected request type
 	req := *validatedQuery.(*services.ListProductsRequest)
 
 	// Call service
