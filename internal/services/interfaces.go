@@ -37,7 +37,6 @@ type OrderService interface {
 	UpdateOrderStatus(ctx context.Context, id string, status models.OrderStatus) (*OrderResponse, error)
 	CancelOrder(ctx context.Context, id string) error
 	ListOrders(ctx context.Context, req ListOrdersRequest) (*ListOrdersResponse, error)
-	GetUserOrders(ctx context.Context, userID string, req ListOrdersRequest) (*ListOrdersResponse, error)
 }
 
 // InventoryService defines inventory business logic
@@ -45,7 +44,6 @@ type InventoryService interface {
 	CheckAvailability(ctx context.Context, productID string, quantity int) (bool, error)
 	ReserveInventory(ctx context.Context, items []InventoryItem) error
 	ReleaseInventory(ctx context.Context, items []InventoryItem) error
-	UpdateStock(ctx context.Context, productID string, quantity int) error
 	GetLowStockAlert(ctx context.Context, threshold int) (*LowStockResponse, error)
 }
 
@@ -95,8 +93,6 @@ type PaymentService interface {
 type NotificationService interface {
 	SendNotification(ctx context.Context, req SendNotificationRequest) error
 	GetUserNotifications(ctx context.Context, userID string, req ListNotificationsRequest) (*ListNotificationsResponse, error)
-	MarkAsRead(ctx context.Context, notificationID string) error
-	GetUnreadCount(ctx context.Context, userID string) (int, error)
 }
 
 // ReportService defines reporting business logic
@@ -104,12 +100,6 @@ type ReportService interface {
 	GenerateDailySalesReport(ctx context.Context, date string) (*SalesReportResponse, error)
 	GenerateInventoryReport(ctx context.Context) (*InventoryReportResponse, error)
 	GenerateUserActivityReport(ctx context.Context, req UserActivityReportRequest) (*UserActivityReportResponse, error)
-}
-
-// OrderPipelineService defines concurrent order processing pipeline logic
-type OrderPipelineService interface {
-	ProcessOrder(ctx context.Context, req CreateOrderRequest) (*OrderPipelineResult, error)
-	ProcessOrderAsync(ctx context.Context, req CreateOrderRequest) (<-chan *OrderPipelineResult, error)
 }
 
 // CreateUserRequest Request/Response structs
@@ -400,25 +390,3 @@ type TopProductItem struct {
 	TotalRevenue  float64 `json:"total_revenue"`
 	OrderCount    int     `json:"order_count"`
 }
-
-// OrderPipelineResult represents the result of the order processing pipeline
-type OrderPipelineResult struct {
-	Order          *OrderResponse   `json:"order"`
-	PaymentResult  *PaymentResponse `json:"payment,omitempty"`
-	InventoryItems []InventoryItem  `json:"inventory_items,omitempty"`
-	Notifications  []string         `json:"notifications,omitempty"`
-	ProcessingTime time.Duration    `json:"processing_time"`
-	Errors         []string         `json:"errors,omitempty"`
-	Status         PipelineStatus   `json:"status"`
-}
-
-// PipelineStatus represents the status of pipeline execution
-type PipelineStatus string
-
-const (
-	PipelineStatusPending    PipelineStatus = "pending"
-	PipelineStatusProcessing PipelineStatus = "processing"
-	PipelineStatusCompleted  PipelineStatus = "completed"
-	PipelineStatusFailed     PipelineStatus = "failed"
-	PipelineStatusPartial    PipelineStatus = "partial"
-)

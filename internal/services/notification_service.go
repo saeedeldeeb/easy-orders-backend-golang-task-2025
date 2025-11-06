@@ -166,62 +166,8 @@ func (s *notificationService) GetUserNotifications(ctx context.Context, userID s
 	}, nil
 }
 
-func (s *notificationService) MarkAsRead(ctx context.Context, notificationID string) error {
-	s.logger.Debug("Marking notification as read", "notification_id", notificationID)
-
-	if notificationID == "" {
-		return errors.New("notification ID is required")
-	}
-
-	// Check if notification exists
-	notification, err := s.notificationRepo.GetByID(ctx, notificationID)
-	if err != nil {
-		s.logger.Error("Failed to get notification for mark as read", "error", err, "notification_id", notificationID)
-		return err
-	}
-	if notification == nil {
-		return errors.New("notification not found")
-	}
-
-	// Mark as read
-	if err := s.notificationRepo.MarkAsRead(ctx, notificationID); err != nil {
-		s.logger.Error("Failed to mark notification as read", "error", err, "notification_id", notificationID)
-		return err
-	}
-
-	s.logger.Debug("Notification marked as read", "notification_id", notificationID)
-	return nil
-}
-
-func (s *notificationService) GetUnreadCount(ctx context.Context, userID string) (int, error) {
-	s.logger.Debug("Getting unread notification count", "user_id", userID)
-
-	if userID == "" {
-		return 0, errors.New("user ID is required")
-	}
-
-	// Check if user exists
-	user, err := s.userRepo.GetByID(ctx, userID)
-	if err != nil {
-		s.logger.Error("Failed to get user for unread count", "error", err, "user_id", userID)
-		return 0, err
-	}
-	if user == nil {
-		return 0, errors.New("user not found")
-	}
-
-	count, err := s.notificationRepo.GetUnreadCount(ctx, userID)
-	if err != nil {
-		s.logger.Error("Failed to get unread notification count", "error", err, "user_id", userID)
-		return 0, err
-	}
-
-	s.logger.Debug("Unread notification count retrieved", "user_id", userID, "count", count)
-	return count, nil
-}
-
 // simulateSendNotification simulates sending notification via different channels
-// In a real implementation, this would integrate with email, SMS, push notification services
+// In a real implementation. This would integrate with email, SMS, push notification services
 func (s *notificationService) simulateSendNotification(ctx context.Context, notification *models.Notification) error {
 	s.logger.Debug("Simulating notification send", "notification_id", notification.ID, "channel", notification.Channel)
 

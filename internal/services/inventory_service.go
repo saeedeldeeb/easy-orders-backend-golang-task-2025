@@ -132,36 +132,6 @@ func (s *inventoryService) ReleaseInventory(ctx context.Context, items []Invento
 	return nil
 }
 
-func (s *inventoryService) UpdateStock(ctx context.Context, productID string, quantity int) error {
-	s.logger.Info("Updating stock", "product_id", productID, "quantity", quantity)
-
-	if productID == "" {
-		return errors.New("product ID is required")
-	}
-	if quantity < 0 {
-		return errors.New("quantity cannot be negative")
-	}
-
-	// Check if product exists
-	product, err := s.productRepo.GetByID(ctx, productID)
-	if err != nil {
-		s.logger.Error("Failed to check product existence", "error", err, "product_id", productID)
-		return err
-	}
-	if product == nil {
-		return errors.New("product not found")
-	}
-
-	// Update stock
-	if err := s.inventoryRepo.UpdateStock(ctx, productID, quantity); err != nil {
-		s.logger.Error("Failed to update stock", "error", err, "product_id", productID, "quantity", quantity)
-		return err
-	}
-
-	s.logger.Info("Stock updated successfully", "product_id", productID, "new_quantity", quantity)
-	return nil
-}
-
 func (s *inventoryService) GetLowStockAlert(ctx context.Context, threshold int) (*LowStockResponse, error) {
 	s.logger.Debug("Getting low stock alert", "threshold", threshold)
 
