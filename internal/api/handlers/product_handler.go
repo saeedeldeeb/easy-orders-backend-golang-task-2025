@@ -27,7 +27,7 @@ func NewProductHandler(productService services.ProductService, logger *logger.Lo
 }
 
 // CreateProduct godoc
-// @Summary Create a new product
+// @Summary Create a new product (Admin)
 // @Description Create a new product (Admin only)
 // @Tags products
 // @Accept json
@@ -130,7 +130,7 @@ func (h *ProductHandler) GetProduct(c *gin.Context) {
 }
 
 // UpdateProduct godoc
-// @Summary Update product
+// @Summary Update product (Admin)
 // @Description Update product details (Admin only)
 // @Tags products
 // @Accept json
