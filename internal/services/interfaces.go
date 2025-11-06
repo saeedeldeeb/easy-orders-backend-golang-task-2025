@@ -188,7 +188,7 @@ type ListProductsResponse struct {
 }
 
 type CreateOrderRequest struct {
-	UserID string      `json:"user_id" validate:"required"`
+	UserID string      `json:"-"` // Populated from JWT context, not from request body
 	Items  []OrderItem `json:"items" validate:"required,dive"`
 	Notes  string      `json:"notes,omitempty"`
 }

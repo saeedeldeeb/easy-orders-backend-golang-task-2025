@@ -28,13 +28,14 @@ func NewOrderHandler(orderService services.OrderService, logger *logger.Logger) 
 
 // CreateOrder godoc
 // @Summary Create a new order
-// @Description Create a new order with items
+// @Description Create a new order with items. User ID is automatically extracted from the JWT token.
 // @Tags orders
 // @Accept json
 // @Produce json
-// @Param order body services.CreateOrderRequest true "Order details"
+// @Param order body services.CreateOrderRequest true "Order details (user_id is extracted from JWT, not request body)"
 // @Success 201 {object} object{message=string,data=services.OrderResponse} "Order created successfully"
 // @Failure 400 {object} map[string]interface{} "Invalid request"
+// @Failure 401 {object} map[string]interface{} "User authentication failed"
 // @Failure 404 {object} map[string]interface{} "User or product not found"
 // @Failure 409 {object} map[string]interface{} "Insufficient stock"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
@@ -52,8 +53,21 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 		return
 	}
 
-	// Type assert to the expected request type
+	// Type asserts to the expected request type
 	req := *validatedReq.(*services.CreateOrderRequest)
+
+	// Extract user ID from JWT context (authenticated user)
+	userID, exists := middleware.GetCurrentUserID(c)
+	if !exists {
+		h.logger.Error("User ID not found in context")
+		appErr := errors.NewUnauthorizedError("User authentication failed")
+		middleware.AbortWithError(c, appErr)
+		return
+	}
+
+	// Override UserID with authenticated user's ID for security
+	req.UserID = userID
+	h.logger.Debug("Using authenticated user ID for order", "user_id", userID)
 
 	// Call service
 	order, err := h.orderService.CreateOrder(c.Request.Context(), req)
@@ -119,7 +133,7 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 // @Security BearerAuth
 // @Router /orders/{id} [get]
 func (h *OrderHandler) GetOrder(c *gin.Context) {
-	// Path parameter validation is done by middleware
+	// Middleware does path parameter validation
 	orderID := c.Param("id")
 	h.logger.Debug("Getting order via API", "id", orderID)
 
@@ -161,7 +175,7 @@ func (h *OrderHandler) GetOrder(c *gin.Context) {
 // @Security BearerAuth
 // @Router /orders/{id}/status [get]
 func (h *OrderHandler) GetOrderStatus(c *gin.Context) {
-	// Path parameter validation is done by middleware
+	// Middleware does path parameter validation
 	orderID := c.Param("id")
 	h.logger.Debug("Getting order status via API", "id", orderID)
 
@@ -263,7 +277,7 @@ func (h *OrderHandler) ListOrders(c *gin.Context) {
 		return
 	}
 
-	// Type assert to the expected request type
+	// Type asserts to the expected request type
 	req := *validatedQuery.(*services.ListOrdersRequest)
 
 	// Call service

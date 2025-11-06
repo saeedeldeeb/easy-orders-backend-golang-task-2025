@@ -50,7 +50,7 @@ func (s *orderService) CreateOrder(ctx context.Context, req CreateOrderRequest) 
 		return nil, errors.New("order must have at least one item")
 	}
 
-	// Check if user exists
+	// Check if a user exists
 	user, err := s.userRepo.GetByID(ctx, req.UserID)
 	if err != nil {
 		s.logger.Error("Failed to get user for order", "error", err, "user_id", req.UserID)
@@ -95,7 +95,7 @@ func (s *orderService) CreateOrder(ctx context.Context, req CreateOrderRequest) 
 			return nil, fmt.Errorf("insufficient stock for product %s", item.ProductID)
 		}
 
-		// Create order item
+		// Create an order item
 		unitPrice := product.Price
 		totalPrice := unitPrice * float64(item.Quantity)
 		totalAmount += totalPrice
