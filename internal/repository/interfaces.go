@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"time"
 
 	"easy-orders-backend/internal/models"
 )
@@ -47,6 +48,7 @@ type OrderRepository interface {
 	UpdateStatus(ctx context.Context, id string, status models.OrderStatus) error
 	List(ctx context.Context, offset, limit int) ([]*models.Order, error)
 	ListByStatus(ctx context.Context, status models.OrderStatus, offset, limit int) ([]*models.Order, error)
+	GetByDateRange(ctx context.Context, startDate, endDate time.Time) ([]*models.Order, error)
 	Count(ctx context.Context) (int64, error)
 	CountByStatus(ctx context.Context, status models.OrderStatus) (int64, error)
 	CountByUserID(ctx context.Context, userID string) (int64, error)

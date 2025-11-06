@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"time"
 
 	"easy-orders-backend/internal/models"
 	"easy-orders-backend/pkg/database"
@@ -174,6 +175,26 @@ func (r *orderRepository) ListByStatus(ctx context.Context, status models.OrderS
 	}
 
 	r.logger.Debug("Orders by status retrieved from database", "status", status, "count", len(orders))
+	return orders, nil
+}
+
+func (r *orderRepository) GetByDateRange(ctx context.Context, startDate, endDate time.Time) ([]*models.Order, error) {
+	r.logger.Debug("Getting orders by date range", "start_date", startDate, "end_date", endDate)
+
+	var orders []*models.Order
+	if err := r.db.WithContext(ctx).
+		Preload("User").
+		Preload("Items").
+		Preload("Items.Product").
+		Preload("Payments").
+		Where("created_at >= ? AND created_at < ?", startDate, endDate).
+		Order("created_at DESC").
+		Find(&orders).Error; err != nil {
+		r.logger.Error("Failed to get orders by date range", "error", err, "start_date", startDate, "end_date", endDate)
+		return nil, err
+	}
+
+	r.logger.Debug("Orders by date range retrieved from database", "count", len(orders), "start_date", startDate, "end_date", endDate)
 	return orders, nil
 }
 

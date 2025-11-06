@@ -43,24 +43,19 @@ func (s *reportService) GenerateDailySalesReport(ctx context.Context, date strin
 		date = time.Now().Format("2006-01-02")
 	}
 
-	// Parse date to validate format
-	_, err := time.Parse("2006-01-02", date)
+	// Parse date to validate format and create date range
+	startDate, err := time.Parse("2006-01-02", date)
 	if err != nil {
 		return nil, errors.New("invalid date format, use YYYY-MM-DD")
 	}
 
-	// For now, we'll simulate the report generation since we don't have date-filtered queries
-	// In a real implementation, we would:
-	// 1. Get all orders for the specific date
-	// 2. Get all payments for those orders
-	// 3. Calculate totals, counts, etc.
+	// Create an end date (next day at 00:00:00) for exclusive range
+	endDate := startDate.AddDate(0, 0, 1)
 
-	// Simulate getting orders for the date
-	// This would be a new repository method like GetOrdersByDateRange
-	s.logger.Debug("Fetching orders for date", "date", date)
+	s.logger.Debug("Fetching orders for date range", "date", date, "start_date", startDate, "end_date", endDate)
 
-	// Get recent orders as a simulation
-	orders, err := s.orderRepo.List(ctx, 0, 100)
+	// Get all orders for the specific date using a date range query
+	orders, err := s.orderRepo.GetByDateRange(ctx, startDate, endDate)
 	if err != nil {
 		s.logger.Error("Failed to get orders for sales report", "error", err, "date", date)
 		return nil, err
@@ -75,7 +70,6 @@ func (s *reportService) GenerateDailySalesReport(ctx context.Context, date strin
 
 	for _, order := range orders {
 		totalOrders++
-		totalSales += order.TotalAmount
 
 		statusStr := string(order.Status)
 		ordersByStatus[statusStr]++
@@ -83,14 +77,17 @@ func (s *reportService) GenerateDailySalesReport(ctx context.Context, date strin
 		switch order.Status {
 		case models.OrderStatusDelivered:
 			completedOrders++
+			// Only count completed/delivered orders in total sales
+			totalSales += order.TotalAmount
 		case models.OrderStatusCancelled:
 			cancelledOrders++
 		}
 	}
 
+	// Calculate the average order value based on completed orders only
 	averageOrderValue := float64(0)
-	if totalOrders > 0 {
-		averageOrderValue = totalSales / float64(totalOrders)
+	if completedOrders > 0 {
+		averageOrderValue = totalSales / float64(completedOrders)
 	}
 
 	report := &SalesReportResponse{

@@ -151,7 +151,7 @@ func (h *AdminHandler) UpdateOrderStatus(c *gin.Context) {
 // @Failure 400 {object} map[string]interface{} "Invalid date format"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
 // @Security BearerAuth
-// @Router /admin/reports/sales/daily [get]
+// @Router /admin/reports/daily [get]
 func (h *AdminHandler) GenerateDailySalesReport(c *gin.Context) {
 	h.logger.Debug("Generating daily sales report via admin API")
 
