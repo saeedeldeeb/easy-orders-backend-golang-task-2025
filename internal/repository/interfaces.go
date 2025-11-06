@@ -95,10 +95,6 @@ type NotificationRepository interface {
 	GetByID(ctx context.Context, id string) (*models.Notification, error)
 	GetByUserID(ctx context.Context, userID string, offset, limit int) ([]*models.Notification, error)
 	GetUnreadByUserID(ctx context.Context, userID string, offset, limit int) ([]*models.Notification, error)
-	MarkAsRead(ctx context.Context, id string) error
-	MarkAllAsRead(ctx context.Context, userID string) error
-	GetUnreadCount(ctx context.Context, userID string) (int, error)
-	Delete(ctx context.Context, id string) error
 }
 
 // AuditLogRepository defines audit log data access methods
