@@ -24,6 +24,7 @@ type UserRepository interface {
 // ProductRepository defines product data access methods
 type ProductRepository interface {
 	Create(ctx context.Context, product *models.Product) error
+	CreateWithInventory(ctx context.Context, product *models.Product, inventory *models.Inventory) error
 	GetByID(ctx context.Context, id string) (*models.Product, error)
 	GetBySKU(ctx context.Context, sku string) (*models.Product, error)
 	Update(ctx context.Context, product *models.Product) error
@@ -62,6 +63,7 @@ type OrderItemRepository interface {
 
 // InventoryRepository defines inventory data access methods
 type InventoryRepository interface {
+	Create(ctx context.Context, inventory *models.Inventory) error
 	GetByProductID(ctx context.Context, productID string) (*models.Inventory, error)
 	UpdateStock(ctx context.Context, productID string, quantity int) error
 	ReserveStock(ctx context.Context, productID string, quantity int) error

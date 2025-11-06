@@ -25,6 +25,18 @@ func NewInventoryRepository(db *database.DB, logger *logger.Logger) InventoryRep
 	}
 }
 
+func (r *inventoryRepository) Create(ctx context.Context, inventory *models.Inventory) error {
+	r.logger.Debug("Creating inventory", "product_id", inventory.ProductID, "quantity", inventory.Quantity)
+
+	if err := r.db.WithContext(ctx).Create(inventory).Error; err != nil {
+		r.logger.Error("Failed to create inventory", "error", err, "product_id", inventory.ProductID)
+		return err
+	}
+
+	r.logger.Info("Inventory created successfully", "product_id", inventory.ProductID, "quantity", inventory.Quantity, "available", inventory.Available)
+	return nil
+}
+
 func (r *inventoryRepository) GetByProductID(ctx context.Context, productID string) (*models.Inventory, error) {
 	r.logger.Debug("Getting inventory by product ID", "product_id", productID)
 

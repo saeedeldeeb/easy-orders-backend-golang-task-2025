@@ -51,7 +51,7 @@ func (h *ProductHandler) CreateProduct(c *gin.Context) {
 		return
 	}
 
-	// Type assert to the expected request type
+	// Type asserts to the expected request type
 	req := *validatedReq.(*services.CreateProductRequest)
 
 	// Call service
@@ -101,7 +101,7 @@ func (h *ProductHandler) CreateProduct(c *gin.Context) {
 // @Security BearerAuth
 // @Router /products/{id} [get]
 func (h *ProductHandler) GetProduct(c *gin.Context) {
-	// Path parameter validation is done by middleware
+	// Middleware does path parameter validation
 	productID := c.Param("id")
 	h.logger.Debug("Getting product via API", "id", productID)
 
@@ -144,7 +144,7 @@ func (h *ProductHandler) GetProduct(c *gin.Context) {
 // @Security BearerAuth
 // @Router /products/{id} [put]
 func (h *ProductHandler) UpdateProduct(c *gin.Context) {
-	// Path parameter validation is done by middleware
+	// Middleware does path parameter validation
 	productID := c.Param("id")
 	h.logger.Debug("Updating product via API", "id", productID)
 
@@ -157,7 +157,7 @@ func (h *ProductHandler) UpdateProduct(c *gin.Context) {
 		return
 	}
 
-	// Type assert to the expected request type
+	// Type asserts to the expected request type
 	req := *validatedReq.(*services.UpdateProductRequest)
 
 	// Call service

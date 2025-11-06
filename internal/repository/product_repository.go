@@ -36,6 +36,36 @@ func (r *productRepository) Create(ctx context.Context, product *models.Product)
 	return nil
 }
 
+func (r *productRepository) CreateWithInventory(ctx context.Context, product *models.Product, inventory *models.Inventory) error {
+	r.logger.Debug("Creating product with inventory", "name", product.Name, "sku", product.SKU)
+
+	// Use transaction to ensure both product and inventory are created atomically
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		// Create product
+		if err := tx.WithContext(ctx).Create(product).Error; err != nil {
+			r.logger.Error("Failed to create product in transaction", "error", err, "sku", product.SKU)
+			return err
+		}
+
+		r.logger.Info("Product created in transaction", "id", product.ID, "sku", product.SKU)
+
+		// Create inventory if provided
+		if inventory != nil {
+			// Set the product ID now that we have it
+			inventory.ProductID = product.ID
+
+			if err := tx.WithContext(ctx).Create(inventory).Error; err != nil {
+				r.logger.Error("Failed to create inventory in transaction", "error", err, "product_id", product.ID)
+				return err
+			}
+
+			r.logger.Info("Inventory created in transaction", "product_id", product.ID, "quantity", inventory.Quantity, "available", inventory.Available)
+		}
+
+		return nil
+	})
+}
+
 func (r *productRepository) GetByID(ctx context.Context, id string) (*models.Product, error) {
 	r.logger.Debug("Getting product by ID", "id", id)
 

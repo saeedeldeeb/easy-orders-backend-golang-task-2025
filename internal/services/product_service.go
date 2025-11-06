@@ -61,19 +61,41 @@ func (s *productService) CreateProduct(ctx context.Context, req CreateProductReq
 		IsActive:    true,
 	}
 
-	if err := s.productRepo.Create(ctx, product); err != nil {
+	// Prepare inventory if initial stock is provided
+	var inventory *models.Inventory
+	if req.InitialStock > 0 {
+		// Set default values for MinStock and MaxStock if not provided
+		minStock := 10
+		if req.MinStock > 0 {
+			minStock = req.MinStock
+		}
+
+		maxStock := 1000
+		if req.MaxStock > 0 {
+			maxStock = req.MaxStock
+		}
+
+		inventory = &models.Inventory{
+			Quantity: req.InitialStock,
+			Reserved: 0,
+			MinStock: minStock,
+			MaxStock: maxStock,
+		}
+	}
+
+	// Create a product with inventory (repository handles transaction)
+	if err := s.productRepo.CreateWithInventory(ctx, product, inventory); err != nil {
 		s.logger.Error("Failed to create product", "error", err, "sku", req.SKU)
 		return nil, err
 	}
 
-	// Create initial inventory if quantity is provided
-	if req.InitialStock > 0 {
-		// We need to create inventory via repository (this would need a repository method)
-		// For now, just log it
-		s.logger.Info("Initial stock would be created", "product_id", product.ID, "quantity", req.InitialStock)
-	}
-
 	s.logger.Info("Product created successfully", "id", product.ID, "sku", product.SKU)
+
+	// Get final stock value
+	stock := 0
+	if req.InitialStock > 0 {
+		stock = req.InitialStock
+	}
 
 	return &ProductResponse{
 		ID:          product.ID,
@@ -82,7 +104,7 @@ func (s *productService) CreateProduct(ctx context.Context, req CreateProductReq
 		Price:       product.Price,
 		SKU:         product.SKU,
 		IsActive:    product.IsActive,
-		Stock:       req.InitialStock, // Will be updated when we get actual inventory
+		Stock:       stock,
 	}, nil
 }
 
@@ -133,7 +155,7 @@ func (s *productService) UpdateProduct(ctx context.Context, id string, req Updat
 		return nil, errors.New("product ID is required")
 	}
 
-	// Get existing product
+	// Get an existing product
 	product, err := s.productRepo.GetByID(ctx, id)
 	if err != nil {
 		s.logger.Error("Failed to get product for update", "error", err, "id", id)
