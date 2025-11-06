@@ -57,7 +57,7 @@ func (h *AdminHandler) GetAllOrders(c *gin.Context) {
 		return
 	}
 
-	// Type assert to the expected request type
+	// Type asserts to the expected request type
 	req := *validatedQuery.(*services.ListOrdersRequest)
 
 	// Call service
@@ -105,7 +105,7 @@ func (h *AdminHandler) UpdateOrderStatus(c *gin.Context) {
 		return
 	}
 
-	// Type assert to the expected request type
+	// Type asserts to the expected request type
 	req := *validatedReq.(*services.UpdateStatusRequest)
 
 	// Call service (cast string to OrderStatus type)
@@ -163,7 +163,7 @@ func (h *AdminHandler) GenerateDailySalesReport(c *gin.Context) {
 		return
 	}
 
-	// Type assert to the expected request type
+	// Type asserts to the expected request type
 	req := *validatedQuery.(*services.DailySalesReportQuery)
 
 	// Call service

@@ -94,7 +94,7 @@ func NewGinEngine(
 		protected := v1.Group("")
 		protected.Use(authMiddleware.RequireAuth())
 		{
-			routes.RegisterProductRoutes(protected, productHandler, inventoryHandler, validationMiddleware)
+			routes.RegisterProductRoutes(protected, productHandler, inventoryHandler, authMiddleware, validationMiddleware)
 			routes.RegisterOrderRoutes(protected, orderHandler, validationMiddleware)
 			routes.RegisterPaymentRoutes(protected, paymentHandler, validationMiddleware)
 		}

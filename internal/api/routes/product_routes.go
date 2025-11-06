@@ -9,10 +9,11 @@ import (
 )
 
 // RegisterProductRoutes registers all product-related routes
-func RegisterProductRoutes(router *gin.RouterGroup, productHandler *handlers.ProductHandler, inventoryHandler *handlers.InventoryHandler, validationMw *middleware.ValidationMiddleware) {
+func RegisterProductRoutes(router *gin.RouterGroup, productHandler *handlers.ProductHandler, inventoryHandler *handlers.InventoryHandler, authMw *middleware.AuthMiddleware, validationMw *middleware.ValidationMiddleware) {
 	products := router.Group("/products")
 	{
 		products.POST("",
+			authMw.RequireAdmin(),
 			validationMw.ValidateJSON(services.CreateProductRequest{}),
 			productHandler.CreateProduct,
 		)
@@ -25,6 +26,7 @@ func RegisterProductRoutes(router *gin.RouterGroup, productHandler *handlers.Pro
 			productHandler.GetProduct,
 		)
 		products.PUT("/:id",
+			authMw.RequireAdmin(),
 			validationMw.ValidatePathParams(map[string]string{"id": "required"}),
 			validationMw.ValidateJSON(services.UpdateProductRequest{}),
 			productHandler.UpdateProduct,
