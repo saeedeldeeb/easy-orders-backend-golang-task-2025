@@ -7,8 +7,7 @@ help:
 	@echo "Available commands:"
 	@echo "  build         - Build the application"
 	@echo "  run           - Run the application locally"
-	@echo "  test          - Run tests"
-	@echo "  test-race     - Run tests with race detection"
+	@echo "  test          - Run tests with coverage in dev container"
 	@echo "  clean         - Clean build artifacts"
 	@echo "  docker-up     - Start all services with Docker Compose"
 	@echo "  docker-down   - Stop all services"
@@ -33,13 +32,10 @@ build:
 run:
 	go run cmd/server/main.go
 
-# Run tests
+# Run tests with coverage in dev container
 test:
-	go test -v ./...
-
-# Run tests with race detection
-test-race:
-	go test -race -v ./...
+	@echo "Running tests with coverage in dev container..."
+	@docker-compose -f docker-compose.dev.yml exec app-dev sh -c "go test -v -coverprofile=coverage.out -covermode=atomic ./tests/... && echo '\n📊 Coverage Summary:' && go tool cover -func=coverage.out | grep total"
 
 # Clean build artifacts
 clean:
