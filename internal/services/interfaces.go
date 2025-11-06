@@ -188,7 +188,7 @@ type ListProductsResponse struct {
 }
 
 type CreateOrderRequest struct {
-	UserID string      `json:"-"` // Populated from JWT context, not from request body
+	UserID string      `json:"-"` // Populated from the JWT context, not from the request body
 	Items  []OrderItem `json:"items" validate:"required,dive"`
 	Notes  string      `json:"notes,omitempty"`
 }
@@ -196,7 +196,7 @@ type CreateOrderRequest struct {
 type OrderItem struct {
 	ProductID string  `json:"product_id" validate:"required"`
 	Quantity  int     `json:"quantity" validate:"required,gt=0"`
-	UnitPrice float64 `json:"unit_price"`
+	UnitPrice float64 `json:"-"` // Fetched from the product database, not from a client request
 }
 
 type ListOrdersRequest struct {

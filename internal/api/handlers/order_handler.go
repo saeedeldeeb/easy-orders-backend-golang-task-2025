@@ -65,7 +65,7 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 		return
 	}
 
-	// Override UserID with authenticated user's ID for security
+	// Override UserID with an authenticated user's ID for security
 	req.UserID = userID
 	h.logger.Debug("Using authenticated user ID for order", "user_id", userID)
 
@@ -218,7 +218,7 @@ func (h *OrderHandler) GetOrderStatus(c *gin.Context) {
 // @Security BearerAuth
 // @Router /orders/{id}/cancel [patch]
 func (h *OrderHandler) CancelOrder(c *gin.Context) {
-	// Path parameter validation is done by middleware
+	// Middleware does path parameter validation
 	orderID := c.Param("id")
 	h.logger.Debug("Cancelling order via API", "id", orderID)
 
