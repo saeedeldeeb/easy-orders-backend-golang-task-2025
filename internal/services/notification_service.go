@@ -44,7 +44,7 @@ func (s *notificationService) SendNotification(ctx context.Context, req SendNoti
 		return errors.New("notification body is required")
 	}
 
-	// Check if user exists
+	// Check if a user exists
 	user, err := s.userRepo.GetByID(ctx, req.UserID)
 	if err != nil {
 		s.logger.Error("Failed to get user for notification", "error", err, "user_id", req.UserID)
@@ -88,7 +88,7 @@ func (s *notificationService) SendNotification(ctx context.Context, req SendNoti
 		return nil
 	}
 
-	// Mark notification as sent
+	// Mark the notification as sent
 	notification.MarkAsSent()
 	// Note: In a real implementation, we would need an Update method in the repository
 	// For now, we'll just log that the notification was sent
@@ -105,7 +105,7 @@ func (s *notificationService) GetUserNotifications(ctx context.Context, userID s
 		return nil, errors.New("user ID is required")
 	}
 
-	// Check if user exists
+	// Check if a user exists
 	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
 		s.logger.Error("Failed to get user for notifications", "error", err, "user_id", userID)
@@ -115,7 +115,7 @@ func (s *notificationService) GetUserNotifications(ctx context.Context, userID s
 		return nil, errors.New("user not found")
 	}
 
-	// Set default limit if not provided
+	// Set a default limit if not provided
 	limit := req.Limit
 	if limit <= 0 || limit > 100 {
 		limit = 20 // Default limit
@@ -208,9 +208,7 @@ func (s *notificationService) simulatePushNotification(ctx context.Context, noti
 
 func (s *notificationService) simulateInAppNotification(ctx context.Context, notification *models.Notification) error {
 	s.logger.Debug("Simulating in-app notification", "notification_id", notification.ID)
-	// In-app notifications are just stored in the database and shown in the UI
+	// In-app notifications are just stored in the database and shown in the UI.
 	// No external service integration needed
 	return nil
 }
-
-// Note: Update method would be needed in the repository interface for full functionality

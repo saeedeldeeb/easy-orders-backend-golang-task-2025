@@ -20,12 +20,6 @@ func RegisterPaymentRoutes(router *gin.RouterGroup, handler *handlers.PaymentHan
 			validationMw.ValidatePathParams(map[string]string{"id": "required"}),
 			handler.GetPayment,
 		)
-
-		payments.POST("/:id/refund",
-			validationMw.ValidatePathParams(map[string]string{"id": "required"}),
-			validationMw.ValidateJSON(services.RefundRequest{}),
-			handler.RefundPayment,
-		)
 	}
 
 	// Order payment routes

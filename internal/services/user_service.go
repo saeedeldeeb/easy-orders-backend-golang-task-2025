@@ -142,54 +142,6 @@ func (s *userService) UpdateUser(ctx context.Context, id string, req UpdateUserR
 	}, nil
 }
 
-func (s *userService) DeleteUser(ctx context.Context, id string) error {
-	s.logger.Info("Deleting user", "id", id)
-
-	if err := s.userRepo.Delete(ctx, id); err != nil {
-		s.logger.Error("Failed to delete user", "error", err, "id", id)
-		return err
-	}
-
-	s.logger.Info("User deleted successfully", "id", id)
-	return nil
-}
-
-func (s *userService) ListUsers(ctx context.Context, req ListUsersRequest) (*ListUsersResponse, error) {
-	s.logger.Debug("Listing users", "offset", req.Offset, "limit", req.Limit)
-
-	// Get paginated users
-	users, err := s.userRepo.List(ctx, req.Offset, req.Limit)
-	if err != nil {
-		s.logger.Error("Failed to list users", "error", err)
-		return nil, err
-	}
-
-	// Get total count
-	totalCount, err := s.userRepo.Count(ctx)
-	if err != nil {
-		s.logger.Error("Failed to count users", "error", err)
-		return nil, err
-	}
-
-	userResponses := make([]*UserResponse, len(users))
-	for i, user := range users {
-		userResponses[i] = &UserResponse{
-			ID:       user.ID,
-			Email:    user.Email,
-			Name:     user.Name,
-			Role:     string(user.Role),
-			IsActive: user.IsActive,
-		}
-	}
-
-	return &ListUsersResponse{
-		Users:  userResponses,
-		Offset: req.Offset,
-		Limit:  req.Limit,
-		Total:  int(totalCount),
-	}, nil
-}
-
 func (s *userService) AuthenticateUser(ctx context.Context, email, password string) (*AuthResponse, error) {
 	s.logger.Debug("Authenticating user", "email", email)
 

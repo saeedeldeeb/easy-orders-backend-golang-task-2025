@@ -9,8 +9,6 @@ import (
 	"easy-orders-backend/internal/models"
 	"easy-orders-backend/internal/repository"
 	"easy-orders-backend/pkg/logger"
-
-	"github.com/google/uuid"
 )
 
 // paymentService implements PaymentService interface
@@ -80,7 +78,7 @@ func (s *paymentService) ProcessPayment(ctx context.Context, req ProcessPaymentR
 		}
 	}
 
-	// Create payment record
+	// Create a payment record
 	payment := &models.Payment{
 		OrderID:           req.OrderID,
 		Amount:            req.Amount,
@@ -160,92 +158,6 @@ func (s *paymentService) GetPayment(ctx context.Context, id string) (*PaymentRes
 	}, nil
 }
 
-func (s *paymentService) RefundPayment(ctx context.Context, id string, amount float64) (*PaymentResponse, error) {
-	s.logger.Info("Processing refund", "payment_id", id, "amount", amount)
-
-	if id == "" {
-		return nil, errors.New("payment ID is required")
-	}
-	if amount <= 0 {
-		return nil, errors.New("refund amount must be greater than 0")
-	}
-
-	// Get original payment
-	payment, err := s.paymentRepo.GetByID(ctx, id)
-	if err != nil {
-		s.logger.Error("Failed to get payment for refund", "error", err, "id", id)
-		return nil, err
-	}
-
-	if payment == nil {
-		return nil, errors.New("payment not found")
-	}
-
-	// Check if payment can be refunded
-	if !payment.CanRefund() {
-		return nil, fmt.Errorf("payment in status %s cannot be refunded", payment.Status)
-	}
-
-	// Validate refund amount
-	if amount > payment.Amount {
-		return nil, fmt.Errorf("refund amount %.2f cannot exceed payment amount %.2f", amount, payment.Amount)
-	}
-
-	// Create refund payment record
-	refundPayment := &models.Payment{
-		OrderID:           payment.OrderID,
-		Amount:            -amount, // Negative amount for refund
-		Currency:          payment.Currency,
-		Status:            models.PaymentStatusPending,
-		Method:            payment.Method,
-		ExternalReference: fmt.Sprintf("REFUND_%s_%s", payment.ID, uuid.New().String()[:8]),
-	}
-
-	if err := s.paymentRepo.Create(ctx, refundPayment); err != nil {
-		s.logger.Error("Failed to create refund payment", "error", err, "original_payment_id", id)
-		return nil, err
-	}
-
-	// Simulate refund processing
-	success := s.simulateRefundProcessing(ctx, refundPayment)
-
-	if success {
-		// Mark refund as completed
-		refundPayment.MarkCompleted()
-
-		if err := s.paymentRepo.Update(ctx, refundPayment); err != nil {
-			s.logger.Error("Failed to update refund status", "error", err, "refund_id", refundPayment.ID)
-			return nil, err
-		}
-
-		// Update original payment status to refunded if full refund
-		if amount == payment.Amount {
-			if err := s.paymentRepo.UpdateStatus(ctx, id, models.PaymentStatusRefunded); err != nil {
-				s.logger.Error("Failed to update original payment status", "error", err, "payment_id", id)
-			}
-		}
-
-		s.logger.Info("Refund processed successfully", "refund_id", refundPayment.ID, "original_payment_id", id)
-	} else {
-		// Mark refund as failed
-		refundPayment.MarkFailed("Refund processing failed")
-
-		if err := s.paymentRepo.Update(ctx, refundPayment); err != nil {
-			s.logger.Error("Failed to update failed refund status", "error", err, "refund_id", refundPayment.ID)
-		}
-
-		s.logger.Warn("Refund processing failed", "refund_id", refundPayment.ID, "original_payment_id", id)
-		return nil, errors.New("refund processing failed")
-	}
-
-	return &PaymentResponse{
-		ID:      refundPayment.ID,
-		OrderID: refundPayment.OrderID,
-		Amount:  refundPayment.Amount,
-		Status:  refundPayment.Status,
-	}, nil
-}
-
 func (s *paymentService) GetOrderPayments(ctx context.Context, orderID string) ([]*PaymentResponse, error) {
 	s.logger.Debug("Getting order payments", "order_id", orderID)
 
@@ -288,22 +200,6 @@ func (s *paymentService) simulatePaymentProcessing(ctx context.Context, payment 
 	success := time.Now().UnixNano()%100 < 95
 
 	s.logger.Debug("Payment processing simulation completed", "payment_id", payment.ID, "success", success)
-
-	return success
-}
-
-// simulateRefundProcessing simulates external refund processing
-// In a real implementation, this would integrate with a payment gateway
-func (s *paymentService) simulateRefundProcessing(ctx context.Context, refund *models.Payment) bool {
-	s.logger.Debug("Simulating refund processing", "refund_id", refund.ID, "method", refund.Method)
-
-	// Simulate processing delay
-	time.Sleep(150 * time.Millisecond)
-
-	// Simulate 98% success rate for refunds
-	success := time.Now().UnixNano()%100 < 98
-
-	s.logger.Debug("Refund processing simulation completed", "refund_id", refund.ID, "success", success)
 
 	return success
 }

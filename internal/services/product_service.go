@@ -187,34 +187,6 @@ func (s *productService) UpdateProduct(ctx context.Context, id string, req Updat
 	}, nil
 }
 
-func (s *productService) DeleteProduct(ctx context.Context, id string) error {
-	s.logger.Info("Deleting product", "id", id)
-
-	if id == "" {
-		return errors.New("product ID is required")
-	}
-
-	// Check if product exists
-	product, err := s.productRepo.GetByID(ctx, id)
-	if err != nil {
-		s.logger.Error("Failed to get product for deletion", "error", err, "id", id)
-		return err
-	}
-
-	if product == nil {
-		return errors.New("product not found")
-	}
-
-	// Soft delete the product
-	if err := s.productRepo.Delete(ctx, id); err != nil {
-		s.logger.Error("Failed to delete product", "error", err, "id", id)
-		return err
-	}
-
-	s.logger.Info("Product deleted successfully", "id", id)
-	return nil
-}
-
 func (s *productService) ListProducts(ctx context.Context, req ListProductsRequest) (*ListProductsResponse, error) {
 	s.logger.Debug("Listing products", "page", req.Page, "limit", req.Limit)
 
@@ -224,7 +196,7 @@ func (s *productService) ListProducts(ctx context.Context, req ListProductsReque
 		limit = 20 // Default limit
 	}
 
-	// Set default page to 1 if not provided or invalid
+	// Set the default page to 1 if not provided or invalid
 	page := req.Page
 	if page < 1 {
 		page = 1
@@ -281,71 +253,6 @@ func (s *productService) ListProducts(ctx context.Context, req ListProductsReque
 	}
 
 	s.logger.Debug("Products listed successfully", "count", len(productResponses))
-
-	return &ListProductsResponse{
-		Products: productResponses,
-		Page:     page,
-		Limit:    limit,
-		Total:    int(totalCount),
-	}, nil
-}
-
-func (s *productService) SearchProducts(ctx context.Context, req SearchProductsRequest) (*ListProductsResponse, error) {
-	s.logger.Debug("Searching products", "query", req.Query)
-
-	if req.Query == "" {
-		return nil, errors.New("search query is required")
-	}
-
-	// Set default limit if not provided
-	limit := req.Limit
-	if limit <= 0 || limit > 100 {
-		limit = 20 // Default limit
-	}
-
-	// Set default page to 1 if not provided or invalid
-	page := req.Page
-	if page < 1 {
-		page = 1
-	}
-
-	// Calculate offset from page number
-	offset := (page - 1) * limit
-
-	// Get search results
-	products, err := s.productRepo.Search(ctx, req.Query, offset, limit)
-	if err != nil {
-		s.logger.Error("Failed to search products", "error", err, "query", req.Query)
-		return nil, err
-	}
-
-	// Get total count of search results
-	totalCount, err := s.productRepo.CountSearch(ctx, req.Query)
-	if err != nil {
-		s.logger.Error("Failed to count search results", "error", err, "query", req.Query)
-		return nil, err
-	}
-
-	// Convert to response format
-	productResponses := make([]*ProductResponse, len(products))
-	for i, product := range products {
-		stock := 0
-		if product.Inventory != nil {
-			stock = product.Inventory.Available
-		}
-
-		productResponses[i] = &ProductResponse{
-			ID:          product.ID,
-			Name:        product.Name,
-			Description: product.Description,
-			Price:       product.Price,
-			SKU:         product.SKU,
-			IsActive:    product.IsActive,
-			Stock:       stock,
-		}
-	}
-
-	s.logger.Debug("Product search completed", "count", len(productResponses), "query", req.Query)
 
 	return &ListProductsResponse{
 		Products: productResponses,

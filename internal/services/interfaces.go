@@ -15,8 +15,6 @@ type UserService interface {
 	CreateUser(ctx context.Context, req CreateUserRequest) (*UserResponse, error)
 	GetUser(ctx context.Context, id string) (*UserResponse, error)
 	UpdateUser(ctx context.Context, id string, req UpdateUserRequest) (*UserResponse, error)
-	DeleteUser(ctx context.Context, id string) error
-	ListUsers(ctx context.Context, req ListUsersRequest) (*ListUsersResponse, error)
 	AuthenticateUser(ctx context.Context, email, password string) (*AuthResponse, error)
 }
 
@@ -25,9 +23,7 @@ type ProductService interface {
 	CreateProduct(ctx context.Context, req CreateProductRequest) (*ProductResponse, error)
 	GetProduct(ctx context.Context, id string) (*ProductResponse, error)
 	UpdateProduct(ctx context.Context, id string, req UpdateProductRequest) (*ProductResponse, error)
-	DeleteProduct(ctx context.Context, id string) error
 	ListProducts(ctx context.Context, req ListProductsRequest) (*ListProductsResponse, error)
-	SearchProducts(ctx context.Context, req SearchProductsRequest) (*ListProductsResponse, error)
 }
 
 // OrderService defines order business logic
@@ -85,7 +81,6 @@ type HighVolumeProcessingResult struct {
 type PaymentService interface {
 	ProcessPayment(ctx context.Context, req ProcessPaymentRequest) (*PaymentResponse, error)
 	GetPayment(ctx context.Context, id string) (*PaymentResponse, error)
-	RefundPayment(ctx context.Context, id string, amount float64) (*PaymentResponse, error)
 	GetOrderPayments(ctx context.Context, orderID string) ([]*PaymentResponse, error)
 }
 
@@ -98,8 +93,6 @@ type NotificationService interface {
 // ReportService defines reporting business logic
 type ReportService interface {
 	GenerateDailySalesReport(ctx context.Context, date string) (*SalesReportResponse, error)
-	GenerateInventoryReport(ctx context.Context) (*InventoryReportResponse, error)
-	GenerateUserActivityReport(ctx context.Context, req UserActivityReportRequest) (*UserActivityReportResponse, error)
 }
 
 // CreateUserRequest Request/Response structs
