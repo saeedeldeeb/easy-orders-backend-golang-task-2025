@@ -19,14 +19,15 @@ import (
 // OrderServiceTestSuite defines the test suite for OrderService
 type OrderServiceTestSuite struct {
 	suite.Suite
-	orderService  services.OrderService
-	orderRepo     *mocks.MockOrderRepository
-	orderItemRepo *mocks.MockOrderItemRepository
-	productRepo   *mocks.MockProductRepository
-	inventoryRepo *mocks.MockInventoryRepository
-	userRepo      *mocks.MockUserRepository
-	logger        *logger.Logger
-	ctx           context.Context
+	orderService     services.OrderService
+	inventoryService services.InventoryService
+	orderRepo        *mocks.MockOrderRepository
+	orderItemRepo    *mocks.MockOrderItemRepository
+	productRepo      *mocks.MockProductRepository
+	inventoryRepo    *mocks.MockInventoryRepository
+	userRepo         *mocks.MockUserRepository
+	logger           *logger.Logger
+	ctx              context.Context
 }
 
 // SetupTest runs before each test in the suite
@@ -39,12 +40,23 @@ func (suite *OrderServiceTestSuite) SetupTest() {
 	suite.logger = &logger.Logger{SugaredLogger: mocks.NewNoOpLogger()}
 	suite.ctx = context.Background()
 
+	// Create inventory service
+	suite.inventoryService = services.NewInventoryService(
+		suite.inventoryRepo,
+		suite.productRepo,
+		suite.logger,
+	)
+
+	// Note: For unit tests with mocks, we pass nil for DB since we're mocking repositories
+	// In real scenarios, the transaction logic won't be tested with mocks
 	suite.orderService = services.NewOrderService(
+		nil, // DB not needed for unit tests with mocks
 		suite.orderRepo,
 		suite.orderItemRepo,
 		suite.productRepo,
 		suite.inventoryRepo,
 		suite.userRepo,
+		suite.inventoryService,
 		suite.logger,
 	)
 }

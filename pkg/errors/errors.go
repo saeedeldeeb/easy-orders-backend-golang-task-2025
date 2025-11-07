@@ -32,6 +32,12 @@ const (
 
 	// ErrorTypeRateLimit Rate limiting errors
 	ErrorTypeRateLimit ErrorType = "RATE_LIMIT_EXCEEDED"
+
+	// ErrorTypeConcurrency Concurrency-related errors
+	ErrorTypeConcurrencyConflict      ErrorType = "CONCURRENCY_CONFLICT"
+	ErrorTypeOptimisticLockFailed     ErrorType = "OPTIMISTIC_LOCK_FAILED"
+	ErrorTypeStockReservationConflict ErrorType = "STOCK_RESERVATION_CONFLICT"
+	ErrorTypeLockTimeout              ErrorType = "LOCK_TIMEOUT"
 )
 
 // AppError represents a structured application error
@@ -248,4 +254,57 @@ func GetErrorResponse(err error) map[string]interface{} {
 			"message": "An unexpected error occurred",
 		},
 	}
+}
+
+// Concurrency Error Constructors
+
+// NewConcurrencyConflictError creates a generic concurrency conflict error
+func NewConcurrencyConflictError(message string) *AppError {
+	return NewAppError(ErrorTypeConcurrencyConflict, message, http.StatusConflict)
+}
+
+// NewOptimisticLockError creates an optimistic locking failure error
+func NewOptimisticLockError(resource, id string) *AppError {
+	err := NewAppError(ErrorTypeOptimisticLockFailed,
+		fmt.Sprintf("%s was modified by another process", resource),
+		http.StatusConflict)
+	err.WithContext("resource", resource)
+	err.WithContext("id", id)
+	err.Details = "The resource was updated by another request. Please retry your operation."
+	return err
+}
+
+// NewStockReservationConflictError creates a stock reservation conflict error
+func NewStockReservationConflictError(productID string, cause error) *AppError {
+	err := NewAppError(ErrorTypeStockReservationConflict,
+		"Stock reservation failed due to concurrent modification",
+		http.StatusConflict)
+	err.WithContext("product_id", productID)
+	err.WithCause(cause)
+	err.Details = "Another order was processed simultaneously. Please retry your order."
+	return err
+}
+
+// NewLockTimeoutError creates a lock acquisition timeout error
+func NewLockTimeoutError(resource, id string) *AppError {
+	err := NewAppError(ErrorTypeLockTimeout,
+		"Unable to acquire lock on resource",
+		http.StatusConflict)
+	err.WithContext("resource", resource)
+	err.WithContext("id", id)
+	err.Details = "The system is busy processing other requests. Please try again in a moment."
+	return err
+}
+
+// IsConcurrencyError checks if an error is concurrency-related
+func IsConcurrencyError(err error) bool {
+	return IsErrorType(err, ErrorTypeConcurrencyConflict) ||
+		IsErrorType(err, ErrorTypeOptimisticLockFailed) ||
+		IsErrorType(err, ErrorTypeStockReservationConflict) ||
+		IsErrorType(err, ErrorTypeLockTimeout)
+}
+
+// IsRetryableError checks if an error suggests the operation should be retried
+func IsRetryableError(err error) bool {
+	return IsConcurrencyError(err) || IsErrorType(err, ErrorTypeLockTimeout)
 }

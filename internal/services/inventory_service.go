@@ -74,31 +74,23 @@ func (s *inventoryService) ReserveInventory(ctx context.Context, items []Invento
 		}
 	}
 
-	// Check availability for all items before reserving any
-	for _, item := range items {
-		available, err := s.CheckAvailability(ctx, item.ProductID, item.Quantity)
-		if err != nil {
-			s.logger.Error("Failed to check availability during reservation", "error", err, "product_id", item.ProductID)
-			return err
-		}
-		if !available {
-			return fmt.Errorf("insufficient stock for product %s: requested %d", item.ProductID, item.Quantity)
+	// Convert to repository reservation format
+	reservations := make([]repository.InventoryReservation, len(items))
+	for i, item := range items {
+		reservations[i] = repository.InventoryReservation{
+			ProductID: item.ProductID,
+			Quantity:  item.Quantity,
 		}
 	}
 
-	// Reserve inventory for each item
-	for _, item := range items {
-		if err := s.inventoryRepo.ReserveStock(ctx, item.ProductID, item.Quantity); err != nil {
-			s.logger.Error("Failed to reserve stock", "error", err, "product_id", item.ProductID, "quantity", item.Quantity)
-
-			// TODO: Rollback previously reserved items
-			// For now, log the error and continue
-			return fmt.Errorf("failed to reserve stock for product %s: %w", item.ProductID, err)
-		}
-		s.logger.Debug("Stock reserved", "product_id", item.ProductID, "quantity", item.Quantity)
+	// Use bulk reserve which handles transactions and automatic rollback
+	// If any item fails, all reservations are rolled back automatically
+	if err := s.inventoryRepo.BulkReserve(ctx, reservations); err != nil {
+		s.logger.Error("Failed to bulk reserve inventory", "error", err, "items_count", len(items))
+		return fmt.Errorf("failed to reserve inventory: %w", err)
 	}
 
-	s.logger.Info("Inventory reservation completed", "items_count", len(items))
+	s.logger.Info("Inventory reservation completed successfully", "items_count", len(items))
 	return nil
 }
 
@@ -119,16 +111,23 @@ func (s *inventoryService) ReleaseInventory(ctx context.Context, items []Invento
 		}
 	}
 
-	// Release inventory for each item
-	for _, item := range items {
-		if err := s.inventoryRepo.ReleaseStock(ctx, item.ProductID, item.Quantity); err != nil {
-			s.logger.Error("Failed to release stock", "error", err, "product_id", item.ProductID, "quantity", item.Quantity)
-			return fmt.Errorf("failed to release stock for product %s: %w", item.ProductID, err)
+	// Convert to repository reservation format
+	reservations := make([]repository.InventoryReservation, len(items))
+	for i, item := range items {
+		reservations[i] = repository.InventoryReservation{
+			ProductID: item.ProductID,
+			Quantity:  item.Quantity,
 		}
-		s.logger.Debug("Stock released", "product_id", item.ProductID, "quantity", item.Quantity)
 	}
 
-	s.logger.Info("Inventory release completed", "items_count", len(items))
+	// Use bulk release which handles transactions and automatic rollback
+	// If any item fails, all releases are rolled back automatically
+	if err := s.inventoryRepo.BulkRelease(ctx, reservations); err != nil {
+		s.logger.Error("Failed to bulk release inventory", "error", err, "items_count", len(items))
+		return fmt.Errorf("failed to release inventory: %w", err)
+	}
+
+	s.logger.Info("Inventory release completed successfully", "items_count", len(items))
 	return nil
 }
 

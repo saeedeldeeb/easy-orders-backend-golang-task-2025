@@ -2,39 +2,51 @@ package services
 
 import (
 	"context"
-	"errors"
+	stderrors "errors"
 	"fmt"
+	"strings"
 
 	"easy-orders-backend/internal/models"
 	"easy-orders-backend/internal/repository"
+	"easy-orders-backend/pkg/database"
+	"easy-orders-backend/pkg/errors"
 	"easy-orders-backend/pkg/logger"
+
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // orderService implements OrderService interface
 type orderService struct {
+	db            *database.DB
 	orderRepo     repository.OrderRepository
 	orderItemRepo repository.OrderItemRepository
 	productRepo   repository.ProductRepository
 	inventoryRepo repository.InventoryRepository
 	userRepo      repository.UserRepository
+	inventoryServ InventoryService
 	logger        *logger.Logger
 }
 
 // NewOrderService creates a new order service
 func NewOrderService(
+	db *database.DB,
 	orderRepo repository.OrderRepository,
 	orderItemRepo repository.OrderItemRepository,
 	productRepo repository.ProductRepository,
 	inventoryRepo repository.InventoryRepository,
 	userRepo repository.UserRepository,
+	inventoryServ InventoryService,
 	logger *logger.Logger,
 ) OrderService {
 	return &orderService{
+		db:            db,
 		orderRepo:     orderRepo,
 		orderItemRepo: orderItemRepo,
 		productRepo:   productRepo,
 		inventoryRepo: inventoryRepo,
 		userRepo:      userRepo,
+		inventoryServ: inventoryServ,
 		logger:        logger,
 	}
 }
@@ -44,96 +56,155 @@ func (s *orderService) CreateOrder(ctx context.Context, req CreateOrderRequest) 
 
 	// Validate request
 	if req.UserID == "" {
-		return nil, errors.New("user ID is required")
+		return nil, errors.NewValidationError("user ID is required")
 	}
 	if len(req.Items) == 0 {
-		return nil, errors.New("order must have at least one item")
+		return nil, errors.NewValidationError("order must have at least one item")
 	}
 
-	// Check if a user exists
+	// Check if user exists (outside transaction for better performance)
 	user, err := s.userRepo.GetByID(ctx, req.UserID)
 	if err != nil {
 		s.logger.Error("Failed to get user for order", "error", err, "user_id", req.UserID)
 		return nil, err
 	}
 	if user == nil {
-		return nil, errors.New("user not found")
+		return nil, errors.NewNotFoundError("user")
 	}
 
-	// Validate and calculate order total
-	var totalAmount float64
-	orderItems := make([]*models.OrderItem, 0, len(req.Items))
+	var order *models.Order
+	var orderItems []*models.OrderItem
+	var inventoryItems []InventoryItem
 
-	for _, item := range req.Items {
-		if item.ProductID == "" {
-			return nil, errors.New("product ID is required for all items")
-		}
-		if item.Quantity <= 0 {
-			return nil, fmt.Errorf("quantity must be greater than 0 for product %s", item.ProductID)
+	// Use database transaction for atomicity
+	err = s.db.Transaction(func(tx *gorm.DB) error {
+		// Create transaction context
+		txCtx := context.WithValue(ctx, "db_tx", tx)
+
+		// Validate products and calculate order total
+		var totalAmount float64
+		orderItems = make([]*models.OrderItem, 0, len(req.Items))
+		inventoryItems = make([]InventoryItem, 0, len(req.Items))
+
+		for _, item := range req.Items {
+			if item.ProductID == "" {
+				return errors.NewValidationError("product ID is required for all items")
+			}
+			if item.Quantity <= 0 {
+				return errors.NewValidationErrorWithDetails(
+					"invalid quantity",
+					fmt.Sprintf("quantity must be greater than 0 for product %s", item.ProductID))
+			}
+
+			// Get product using transaction context
+			var product models.Product
+			if err := tx.WithContext(txCtx).First(&product, "id = ?", item.ProductID).Error; err != nil {
+				if stderrors.Is(err, gorm.ErrRecordNotFound) {
+					return errors.NewNotFoundErrorWithID("product", item.ProductID)
+				}
+				s.logger.Error("Failed to get product for order", "error", err, "product_id", item.ProductID)
+				return err
+			}
+
+			if !product.IsActive {
+				return errors.NewBusinessError(fmt.Sprintf("product %s is not available", item.ProductID))
+			}
+
+			// Check and lock inventory using SELECT FOR UPDATE
+			// This prevents race conditions by locking the inventory row until transaction commits
+			var inventory models.Inventory
+			if err := tx.WithContext(txCtx).Clauses(
+				// FOR UPDATE locks the row for the duration of the transaction
+				clause.Locking{Strength: "UPDATE"},
+			).First(&inventory, "product_id = ?", item.ProductID).Error; err != nil {
+				if stderrors.Is(err, gorm.ErrRecordNotFound) {
+					return errors.NewNotFoundErrorWithID("inventory", item.ProductID)
+				}
+				// Check if it's a lock timeout error
+				if strings.Contains(err.Error(), "timeout") || strings.Contains(err.Error(), "lock") {
+					s.logger.Warn("Lock timeout while acquiring inventory", "error", err, "product_id", item.ProductID)
+					return errors.NewLockTimeoutError("inventory", item.ProductID)
+				}
+				s.logger.Error("Failed to get and lock inventory", "error", err, "product_id", item.ProductID)
+				return err
+			}
+
+			// Check if sufficient stock is available
+			if !inventory.CanReserve(item.Quantity) {
+				return errors.NewInsufficientStockError(item.ProductID, item.Quantity, inventory.Available)
+			}
+
+			// Calculate prices
+			unitPrice := product.Price
+			totalPrice := unitPrice * float64(item.Quantity)
+			totalAmount += totalPrice
+
+			// Prepare order item
+			orderItem := &models.OrderItem{
+				ProductID:  item.ProductID,
+				Quantity:   item.Quantity,
+				UnitPrice:  unitPrice,
+				TotalPrice: totalPrice,
+			}
+			orderItems = append(orderItems, orderItem)
+
+			// Track inventory to reserve
+			inventoryItems = append(inventoryItems, InventoryItem{
+				ProductID: item.ProductID,
+				Quantity:  item.Quantity,
+			})
 		}
 
-		// Get product
-		product, err := s.productRepo.GetByID(ctx, item.ProductID)
-		if err != nil {
-			s.logger.Error("Failed to get product for order", "error", err, "product_id", item.ProductID)
-			return nil, err
-		}
-		if product == nil {
-			return nil, fmt.Errorf("product %s not found", item.ProductID)
-		}
-		if !product.IsActive {
-			return nil, fmt.Errorf("product %s is not available", item.ProductID)
+		// Create order within transaction
+		order = &models.Order{
+			UserID:      req.UserID,
+			Status:      models.OrderStatusPending,
+			TotalAmount: totalAmount,
+			Currency:    "USD",
+			Notes:       req.Notes,
 		}
 
-		// Check inventory availability
-		inventory, err := s.inventoryRepo.GetByProductID(ctx, item.ProductID)
-		if err != nil {
-			s.logger.Error("Failed to get inventory for order", "error", err, "product_id", item.ProductID)
-			return nil, err
-		}
-		if inventory == nil || !inventory.CanReserve(item.Quantity) {
-			return nil, fmt.Errorf("insufficient stock for product %s", item.ProductID)
+		if err := tx.WithContext(txCtx).Create(order).Error; err != nil {
+			s.logger.Error("Failed to create order", "error", err, "user_id", req.UserID)
+			return err
 		}
 
-		// Create an order item
-		unitPrice := product.Price
-		totalPrice := unitPrice * float64(item.Quantity)
-		totalAmount += totalPrice
-
-		orderItem := &models.OrderItem{
-			ProductID:  item.ProductID,
-			Quantity:   item.Quantity,
-			UnitPrice:  unitPrice,
-			TotalPrice: totalPrice,
+		// Set order ID for all items and create them
+		for _, orderItem := range orderItems {
+			orderItem.OrderID = order.ID
 		}
-		orderItems = append(orderItems, orderItem)
-	}
 
-	// Create order
-	order := &models.Order{
-		UserID:      req.UserID,
-		Status:      models.OrderStatusPending,
-		TotalAmount: totalAmount,
-		Currency:    "USD",
-		Notes:       req.Notes,
-	}
+		if err := tx.WithContext(txCtx).Create(&orderItems).Error; err != nil {
+			s.logger.Error("Failed to create order items", "error", err, "order_id", order.ID)
+			return err
+		}
 
-	if err := s.orderRepo.Create(ctx, order); err != nil {
-		s.logger.Error("Failed to create order", "error", err, "user_id", req.UserID)
+		// Reserve inventory within the same transaction
+		// Use bulk reserve for better performance
+		reservations := make([]repository.InventoryReservation, len(inventoryItems))
+		for i, item := range inventoryItems {
+			reservations[i] = repository.InventoryReservation{
+				ProductID: item.ProductID,
+				Quantity:  item.Quantity,
+			}
+		}
+
+		// Reserve using the transaction context
+		if err := s.reserveStockInTransaction(tx, txCtx, reservations); err != nil {
+			s.logger.Error("Failed to reserve inventory", "error", err, "order_id", order.ID)
+			return fmt.Errorf("failed to reserve inventory: %w", err)
+		}
+
+		s.logger.Info("Order created and inventory reserved successfully",
+			"order_id", order.ID, "total", totalAmount, "items_count", len(orderItems))
+
+		return nil
+	})
+
+	if err != nil {
+		s.logger.Error("Transaction failed during order creation", "error", err, "user_id", req.UserID)
 		return nil, err
 	}
-
-	// Create order items
-	for _, orderItem := range orderItems {
-		orderItem.OrderID = order.ID
-	}
-
-	if err := s.orderItemRepo.CreateBatch(ctx, orderItems); err != nil {
-		s.logger.Error("Failed to create order items", "error", err, "order_id", order.ID)
-		return nil, err
-	}
-
-	s.logger.Info("Order created successfully", "order_id", order.ID, "total", totalAmount)
 
 	// Convert to response format
 	responseItems := make([]OrderItem, len(orderItems))
@@ -154,11 +225,53 @@ func (s *orderService) CreateOrder(ctx context.Context, req CreateOrderRequest) 
 	}, nil
 }
 
+// reserveStockInTransaction reserves inventory within an existing transaction
+func (s *orderService) reserveStockInTransaction(tx *gorm.DB, ctx context.Context, items []repository.InventoryReservation) error {
+	for _, item := range items {
+		var inventory models.Inventory
+		if err := tx.WithContext(ctx).First(&inventory, "product_id = ?", item.ProductID).Error; err != nil {
+			return errors.NewDatabaseError("failed to get inventory for reservation", err)
+		}
+
+		// Reserve the stock
+		oldVersion := inventory.Version
+		if err := inventory.Reserve(item.Quantity); err != nil {
+			return errors.NewInsufficientStockError(item.ProductID, item.Quantity, inventory.Available)
+		}
+		inventory.Version++
+
+		// Update with optimistic locking
+		result := tx.WithContext(ctx).Model(&inventory).
+			Where("product_id = ? AND version = ?", item.ProductID, oldVersion).
+			Updates(map[string]interface{}{
+				"reserved":  inventory.Reserved,
+				"available": inventory.Available,
+				"version":   inventory.Version,
+			})
+
+		if result.Error != nil {
+			return errors.NewDatabaseError("failed to update inventory reservation", result.Error)
+		}
+
+		// Optimistic lock failure - version mismatch
+		if result.RowsAffected == 0 {
+			s.logger.Warn("Optimistic lock failed during inventory reservation",
+				"product_id", item.ProductID, "expected_version", oldVersion)
+			return errors.NewStockReservationConflictError(item.ProductID,
+				stderrors.New("inventory was modified by another transaction"))
+		}
+
+		s.logger.Debug("Stock reserved in transaction", "product_id", item.ProductID, "quantity", item.Quantity)
+	}
+
+	return nil
+}
+
 func (s *orderService) GetOrder(ctx context.Context, id string) (*OrderResponse, error) {
 	s.logger.Debug("Getting order", "id", id)
 
 	if id == "" {
-		return nil, errors.New("order ID is required")
+		return nil, errors.NewValidationError("order ID is required")
 	}
 
 	order, err := s.orderRepo.GetByIDWithItems(ctx, id)
@@ -168,7 +281,7 @@ func (s *orderService) GetOrder(ctx context.Context, id string) (*OrderResponse,
 	}
 
 	if order == nil {
-		return nil, errors.New("order not found")
+		return nil, errors.NewNotFoundErrorWithID("order", id)
 	}
 
 	// Convert order items to response format
@@ -194,7 +307,7 @@ func (s *orderService) UpdateOrderStatus(ctx context.Context, id string, status 
 	s.logger.Info("Updating order status", "id", id, "status", status)
 
 	if id == "" {
-		return nil, errors.New("order ID is required")
+		return nil, errors.NewValidationError("order ID is required")
 	}
 
 	// Get existing order
@@ -205,12 +318,12 @@ func (s *orderService) UpdateOrderStatus(ctx context.Context, id string, status 
 	}
 
 	if order == nil {
-		return nil, errors.New("order not found")
+		return nil, errors.NewNotFoundErrorWithID("order", id)
 	}
 
 	// Check if status transition is valid
 	if !order.CanTransitionTo(status) {
-		return nil, fmt.Errorf("cannot transition from %s to %s", order.Status, status)
+		return nil, errors.NewInvalidTransitionError(string(order.Status), string(status))
 	}
 
 	// Update order status
@@ -251,7 +364,7 @@ func (s *orderService) CancelOrder(ctx context.Context, id string) error {
 	s.logger.Info("Cancelling order", "id", id)
 
 	if id == "" {
-		return errors.New("order ID is required")
+		return errors.NewValidationError("order ID is required")
 	}
 
 	// Get existing order
@@ -262,12 +375,12 @@ func (s *orderService) CancelOrder(ctx context.Context, id string) error {
 	}
 
 	if order == nil {
-		return errors.New("order not found")
+		return errors.NewNotFoundErrorWithID("order", id)
 	}
 
 	// Check if order can be cancelled
 	if !order.IsCancellable() {
-		return fmt.Errorf("order in status %s cannot be cancelled", order.Status)
+		return errors.NewBusinessError(fmt.Sprintf("order in status %s cannot be cancelled", order.Status))
 	}
 
 	// Update order status to cancelled

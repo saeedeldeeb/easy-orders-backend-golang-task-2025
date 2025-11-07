@@ -12,6 +12,7 @@ import (
 	"easy-orders-backend/tests/testutil"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -141,23 +142,13 @@ func (suite *InventoryServiceTestSuite) TestReserveInventory_Success() {
 	productID1 := "product-id-1"
 	productID2 := "product-id-2"
 
-	inventory1 := testutil.CreateTestInventory(productID1, func(i *models.Inventory) {
-		i.Available = 100
-	})
-	inventory2 := testutil.CreateTestInventory(productID2, func(i *models.Inventory) {
-		i.Available = 50
-	})
-
 	items := []services.InventoryItem{
 		{ProductID: productID1, Quantity: 10},
 		{ProductID: productID2, Quantity: 5},
 	}
 
-	// Mock expectations
-	suite.inventoryRepo.On("GetByProductID", suite.ctx, productID1).Return(inventory1, nil)
-	suite.inventoryRepo.On("GetByProductID", suite.ctx, productID2).Return(inventory2, nil)
-	suite.inventoryRepo.On("ReserveStock", suite.ctx, productID1, 10).Return(nil)
-	suite.inventoryRepo.On("ReserveStock", suite.ctx, productID2, 5).Return(nil)
+	// Mock expectations - BulkReserve will be called
+	suite.inventoryRepo.On("BulkReserve", suite.ctx, mock.AnythingOfType("[]repository.InventoryReservation")).Return(nil)
 
 	// Execute
 	err := suite.inventoryService.ReserveInventory(suite.ctx, items)
@@ -207,26 +198,24 @@ func (suite *InventoryServiceTestSuite) TestReserveInventory_ValidationError_Inv
 // Test ReserveInventory - Insufficient Stock for One Item
 func (suite *InventoryServiceTestSuite) TestReserveInventory_InsufficientStock() {
 	productID := "product-id-1"
-	inventory := testutil.CreateTestInventory(productID, func(i *models.Inventory) {
-		i.Available = 5
-	})
 
 	items := []services.InventoryItem{
 		{ProductID: productID, Quantity: 10},
 	}
 
-	// Mock expectations
-	suite.inventoryRepo.On("GetByProductID", suite.ctx, productID).Return(inventory, nil)
+	// Mock expectations - BulkReserve will return error
+	suite.inventoryRepo.On("BulkReserve", suite.ctx, mock.AnythingOfType("[]repository.InventoryReservation")).
+		Return(errors.New("insufficient stock for product product-id-1: requested 10"))
 
 	// Execute
 	err := suite.inventoryService.ReserveInventory(suite.ctx, items)
 
 	// Assert
 	assert.Error(suite.T(), err)
-	assert.Contains(suite.T(), err.Error(), "insufficient stock")
+	assert.Contains(suite.T(), err.Error(), "failed to reserve inventory")
 }
 
-// Test ReserveInventory - Repository Error on CheckAvailability
+// Test ReserveInventory - Repository Error on BulkReserve
 func (suite *InventoryServiceTestSuite) TestReserveInventory_RepositoryError_CheckAvailability() {
 	productID := "product-id-1"
 
@@ -234,38 +223,36 @@ func (suite *InventoryServiceTestSuite) TestReserveInventory_RepositoryError_Che
 		{ProductID: productID, Quantity: 10},
 	}
 
-	// Mock expectations
-	suite.inventoryRepo.On("GetByProductID", suite.ctx, productID).Return(nil, errors.New("database error"))
+	// Mock expectations - BulkReserve will return error
+	suite.inventoryRepo.On("BulkReserve", suite.ctx, mock.AnythingOfType("[]repository.InventoryReservation")).
+		Return(errors.New("database error"))
 
 	// Execute
 	err := suite.inventoryService.ReserveInventory(suite.ctx, items)
 
 	// Assert
 	assert.Error(suite.T(), err)
-	assert.Contains(suite.T(), err.Error(), "database error")
+	assert.Contains(suite.T(), err.Error(), "failed to reserve inventory")
 }
 
 // Test ReserveInventory - Repository Error on ReserveStock
 func (suite *InventoryServiceTestSuite) TestReserveInventory_RepositoryError_ReserveStock() {
 	productID := "product-id-1"
-	inventory := testutil.CreateTestInventory(productID, func(i *models.Inventory) {
-		i.Available = 100
-	})
 
 	items := []services.InventoryItem{
 		{ProductID: productID, Quantity: 10},
 	}
 
-	// Mock expectations
-	suite.inventoryRepo.On("GetByProductID", suite.ctx, productID).Return(inventory, nil)
-	suite.inventoryRepo.On("ReserveStock", suite.ctx, productID, 10).Return(errors.New("database error"))
+	// Mock expectations - BulkReserve will return error
+	suite.inventoryRepo.On("BulkReserve", suite.ctx, mock.AnythingOfType("[]repository.InventoryReservation")).
+		Return(errors.New("database error"))
 
 	// Execute
 	err := suite.inventoryService.ReserveInventory(suite.ctx, items)
 
 	// Assert
 	assert.Error(suite.T(), err)
-	assert.Contains(suite.T(), err.Error(), "failed to reserve stock")
+	assert.Contains(suite.T(), err.Error(), "failed to reserve inventory")
 }
 
 // Test ReleaseInventory - Happy Path
@@ -278,9 +265,8 @@ func (suite *InventoryServiceTestSuite) TestReleaseInventory_Success() {
 		{ProductID: productID2, Quantity: 5},
 	}
 
-	// Mock expectations
-	suite.inventoryRepo.On("ReleaseStock", suite.ctx, productID1, 10).Return(nil)
-	suite.inventoryRepo.On("ReleaseStock", suite.ctx, productID2, 5).Return(nil)
+	// Mock expectations - BulkRelease will be called
+	suite.inventoryRepo.On("BulkRelease", suite.ctx, mock.AnythingOfType("[]repository.InventoryReservation")).Return(nil)
 
 	// Execute
 	err := suite.inventoryService.ReleaseInventory(suite.ctx, items)
@@ -335,15 +321,16 @@ func (suite *InventoryServiceTestSuite) TestReleaseInventory_RepositoryError() {
 		{ProductID: productID, Quantity: 10},
 	}
 
-	// Mock expectations
-	suite.inventoryRepo.On("ReleaseStock", suite.ctx, productID, 10).Return(errors.New("database error"))
+	// Mock expectations - BulkRelease will return error
+	suite.inventoryRepo.On("BulkRelease", suite.ctx, mock.AnythingOfType("[]repository.InventoryReservation")).
+		Return(errors.New("database error"))
 
 	// Execute
 	err := suite.inventoryService.ReleaseInventory(suite.ctx, items)
 
 	// Assert
 	assert.Error(suite.T(), err)
-	assert.Contains(suite.T(), err.Error(), "failed to release stock")
+	assert.Contains(suite.T(), err.Error(), "failed to release inventory")
 }
 
 // Test GetLowStockAlert - Happy Path
