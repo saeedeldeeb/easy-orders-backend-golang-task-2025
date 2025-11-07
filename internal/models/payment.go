@@ -56,7 +56,7 @@ type Payment struct {
 	ProcessingFee float64 `gorm:"type:decimal(10,2);default:0" json:"processing_fee"`
 
 	// Metadata and audit
-	Metadata string `gorm:"type:jsonb" json:"metadata"` // JSON field for additional data
+	Metadata *string `gorm:"type:jsonb" json:"metadata"` // JSON field for additional data
 
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
