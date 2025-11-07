@@ -1,28 +1,47 @@
 # Easy Orders Backend Makefile
 
-.PHONY: help build run test clean docker-up docker-down docker-build dev debug debug-down debug-logs migrate
+.PHONY: help build run test test-unit test-integration test-concurrency clean docker-up docker-down docker-build dev debug debug-down debug-logs migrate setup
 
 # Default target
 help:
-	@echo "Available commands:"
-	@echo "  build         - Build the application"
-	@echo "  run           - Run the application locally"
-	@echo "  test          - Run tests with coverage in dev container"
-	@echo "  clean         - Clean build artifacts"
-	@echo "  docker-up     - Start all services with Docker Compose"
-	@echo "  docker-down   - Stop all services"
-	@echo "  docker-build  - Build Docker image"
-	@echo "  dev           - Start development environment with hot reload"
-	@echo "  debug         - Start debug environment with Delve for GoLand"
-	@echo "  debug-down    - Stop debug environment"
-	@echo "  debug-logs    - View debug container logs"
-	@echo "  env-setup     - Set up environment configuration from template"
-	@echo "  env-check     - Validate docker-compose configuration"
-	@echo "  compile-check - Check Go compilation"
-	@echo "  validate      - Run full validation (env + compile)"
-	@echo "  seed          - Seed database with test data"
-	@echo "  lint          - Run linters"
-	@echo "  fmt           - Format code"
+	@echo "==================== Easy Orders Backend ===================="
+	@echo ""
+	@echo "📦 Setup Commands:"
+	@echo "  setup            - Complete project setup (env + dependencies)"
+	@echo "  env-setup        - Set up environment configuration from template"
+	@echo "  install-tools    - Install development tools"
+	@echo ""
+	@echo "🐳 Docker Commands:"
+	@echo "  dev              - Start development environment with hot reload"
+	@echo "  dev-down         - Stop development environment"
+	@echo "  docker-up        - Start production services with Docker Compose"
+	@echo "  docker-down      - Stop all services"
+	@echo "  docker-build     - Build Docker image"
+	@echo ""
+	@echo "🧪 Testing Commands:"
+	@echo "  test             - Run all tests with coverage"
+	@echo "  test-unit        - Run unit tests only"
+	@echo "  test-integration - Run integration tests (requires DB)"
+	@echo "  test-concurrency - Run concurrency tests specifically"
+	@echo ""
+	@echo "🔨 Build & Run:"
+	@echo "  build            - Build the application"
+	@echo "  run              - Run the application locally"
+	@echo "  clean            - Clean build artifacts"
+	@echo ""
+	@echo "🐛 Debug Commands:"
+	@echo "  debug            - Start debug environment with Delve for GoLand"
+	@echo "  debug-down       - Stop debug environment"
+	@echo "  debug-logs       - View debug container logs"
+	@echo ""
+	@echo "🔍 Quality & Utilities:"
+	@echo "  lint             - Run linters"
+	@echo "  fmt              - Format code"
+	@echo "  validate         - Run full validation (env + compile)"
+	@echo "  db-shell         - Access PostgreSQL shell"
+	@echo "  logs-dev         - View development logs"
+	@echo ""
+	@echo "============================================================"
 
 # Build the application
 build:
@@ -32,10 +51,59 @@ build:
 run:
 	go run cmd/server/main.go
 
-# Run tests with coverage in dev container
+# Complete setup (run this first!)
+setup: env-setup
+	@echo ""
+	@echo "🚀 Setting up Easy Orders Backend..."
+	@echo ""
+	@echo "1️⃣  Checking prerequisites..."
+	@command -v docker >/dev/null 2>&1 || { echo "❌ Docker is not installed. Please install Docker first."; exit 1; }
+	@command -v docker-compose >/dev/null 2>&1 || { echo "❌ Docker Compose is not installed. Please install Docker Compose first."; exit 1; }
+	@echo "✅ Docker and Docker Compose are installed"
+	@echo ""
+	@echo "2️⃣  Starting development environment..."
+	@make dev
+	@echo ""
+	@echo "3️⃣  Waiting for services to be ready..."
+	@sleep 10
+	@echo ""
+	@echo "✅ Setup complete!"
+	@echo ""
+	@echo "📝 Next steps:"
+	@echo "   - Run 'make test' to verify everything works"
+	@echo "   - Run 'make test-concurrency' to test concurrent order processing"
+	@echo "   - View logs with 'make logs-dev'"
+	@echo "   - Access database shell with 'make db-shell'"
+	@echo ""
+
+# Run all tests with coverage in dev container
 test:
-	@echo "Running tests with coverage in dev container..."
+	@echo "Running all tests with coverage in dev container..."
 	@docker-compose -f docker-compose.dev.yml exec app-dev sh -c "go test -v -coverprofile=coverage.out -covermode=atomic ./tests/... && echo '\n📊 Coverage Summary:' && go tool cover -func=coverage.out | grep total"
+
+# Run unit tests only
+test-unit:
+	@echo "Running unit tests..."
+	@docker-compose -f docker-compose.dev.yml exec app-dev go test -v ./tests/services/...
+
+# Run integration tests (requires database)
+test-integration:
+	@echo "Running integration tests..."
+	@docker-compose -f docker-compose.dev.yml exec app-dev go test -v -count=1 ./tests/integration/...
+
+# Run concurrency tests specifically
+test-concurrency:
+	@echo "🔄 Running concurrency tests..."
+	@echo "This tests concurrent order processing with SELECT FOR UPDATE, transactions, and optimistic locking"
+	@echo ""
+	@docker-compose -f docker-compose.dev.yml exec app-dev go test -v -count=1 ./tests/integration/... -run TestOrderConcurrency
+	@echo ""
+	@echo "✅ Concurrency tests complete!"
+	@echo "📊 Tests verify:"
+	@echo "   - No overselling with concurrent orders"
+	@echo "   - Transaction rollback on failures"
+	@echo "   - Row-level locking (SELECT FOR UPDATE)"
+	@echo "   - Optimistic locking with version field"
 
 # Clean build artifacts
 clean:
