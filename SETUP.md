@@ -175,6 +175,32 @@ make dev-down
 make docker-down
 ```
 
+## Seeded Users
+
+The application comes with pre-seeded test users for your convenience (see `migrations/migrations.go:103`):
+
+| Email | Password | Name | Role |
+|-------|----------|------|------|
+| `admin@easy-orders.com` | `password` | System Administrator | Admin |
+| `customer@example.com` | `password` | John Doe | Customer |
+
+These users are automatically created when the database migrations run.
+
+### ⚠️ Important Testing Warning
+
+**Tests run on the development database for minimal setup and ease of use.** This means:
+
+- Running tests may modify or delete data in your dev database
+- **After running the concurrency integration tests, the seeded users will be deleted**
+- This is intentional to keep the test environment simple and avoid complex test database configuration
+- If users are deleted, simply restart the application to re-seed them:
+  ```bash
+  make dev-down
+  make dev
+  ```
+
+---
+
 ## Testing
 
 ### Run All Tests
@@ -197,6 +223,8 @@ make test-concurrency
 - ✅ **Row-level locking**: SELECT FOR UPDATE prevents race conditions
 - ✅ **Optimistic locking**: Version field prevents lost updates
 - ✅ **Rollback mechanism**: Partial failures undo all changes
+
+**⚠️ Warning**: Running this test will delete seeded users from the development database. To restore them, restart the application with `make dev-down && make dev`.
 
 ### Run Integration Tests
 
